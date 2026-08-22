@@ -415,7 +415,7 @@ Variants {
             Loader {
                 id: blurLoader
                 active: Config.options.lock.blur.enable && (GlobalStates.screenLocked || scaleAnim.running)
-                anchors.fill: parent
+                anchors.fill: wallpaper
                 scale: GlobalStates.screenLocked ? Config.options.lock.blur.extraZoom : 1
                 Behavior on scale {
                     NumberAnimation {
@@ -426,9 +426,11 @@ Variants {
                     }
                 }
                 sourceComponent: GaussianBlur {
-                    source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                    source: wallpaper
                     radius: GlobalStates.screenLocked ? Config.options.lock.blur.radius : 0
                     samples: Config.options.lock.blur.size 
+                    width: wallpaper.width
+                    height: wallpaper.height
                     Rectangle {
                         opacity: GlobalStates.screenLocked ? 1 : 0
                         anchors.fill: parent
