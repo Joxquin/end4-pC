@@ -66,14 +66,24 @@ Singleton {
     }
 
     Timer {
+        id: diskTimer
+        interval: 30000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            diskProc.running = false
+            diskProc.running = true
+        }
+    }
+
+    Timer {
         interval: Config?.options.resources.updateInterval ?? 3000
         running: true
         repeat: true
         onTriggered: {
             tempProc.running = false
             tempProc.running = true
-            diskProc.running = false
-            diskProc.running = true
         }
     }
 
