@@ -64,10 +64,43 @@ Singleton {
         root[name] = !root[name];
     }
     
+    Timer {
+        id: gcTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            if (typeof gc === "function") {
+                gc();
+            }
+        }
+    }
+
+    function scheduleGc() {
+        gcTimer.restart();
+    }
+
+    onSettingsOpenChanged: {
+        if (!settingsOpen) scheduleGc();
+    }
+
+    onSidebarLeftOpenChanged: {
+        if (!sidebarLeftOpen) scheduleGc();
+    }
+
+    onWallpaperSelectorOpenChanged: {
+        if (!wallpaperSelectorOpen) scheduleGc();
+    }
+
+    onOverviewOpenChanged: {
+        if (!overviewOpen) scheduleGc();
+    }
+
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {
             Notifications.timeoutAll();
             Notifications.markAllRead();
+        } else {
+            scheduleGc();
         }
     }
 
