@@ -26,7 +26,12 @@ Item {
     property int tabCount: swipeView.count
 
     function focusActiveItem() {
-        swipeView.currentItem.forceActiveFocus()
+        if (!swipeView.currentItem) return;
+        if (swipeView.currentItem.item && typeof swipeView.currentItem.item.forceActiveFocus === "function") {
+            swipeView.currentItem.item.forceActiveFocus();
+        } else {
+            swipeView.currentItem.forceActiveFocus();
+        }
     }
 
     Keys.onPressed: (event) => {
@@ -86,30 +91,86 @@ Item {
                 }
 
                 contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
-                    ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...(root.mediaEnabled ? [media.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
-                    ...(root.animeEnabled ? [anime.createObject()] : []),
+                    ...(root.aiChatEnabled ? [aiChatLoaderComp.createObject(swipeView)] : []),
+                    ...(root.translatorEnabled ? [translatorLoaderComp.createObject(swipeView)] : []),
+                    ...(root.mediaEnabled ? [mediaLoaderComp.createObject(swipeView)] : []),
+                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject(swipeView)] : []),
+                    ...(root.animeEnabled ? [animeLoaderComp.createObject(swipeView)] : []),
                 ]
             }
         }
 
         Component {
-            id: aiChat
-            AiChat {}
+            id: aiChatLoaderComp
+            Loader {
+                id: aiLdr
+                property bool visited: false
+                active: visited || (swipeView.currentItem === aiLdr)
+                Connections {
+                    target: swipeView
+                    function onCurrentItemChanged() {
+                        if (swipeView.currentItem === aiLdr) {
+                            aiLdr.visited = true;
+                            aiLdr.active = true;
+                        }
+                    }
+                }
+                sourceComponent: AiChat {}
+            }
         }
         Component {
-            id: translator
-            Translator {}
+            id: translatorLoaderComp
+            Loader {
+                id: transLdr
+                property bool visited: false
+                active: visited || (swipeView.currentItem === transLdr)
+                Connections {
+                    target: swipeView
+                    function onCurrentItemChanged() {
+                        if (swipeView.currentItem === transLdr) {
+                            transLdr.visited = true;
+                            transLdr.active = true;
+                        }
+                    }
+                }
+                sourceComponent: Translator {}
+            }
         }
         Component {
-            id: media
-            SidebarPlayerControl {}
+            id: mediaLoaderComp
+            Loader {
+                id: mediaLdr
+                property bool visited: false
+                active: visited || (swipeView.currentItem === mediaLdr)
+                Connections {
+                    target: swipeView
+                    function onCurrentItemChanged() {
+                        if (swipeView.currentItem === mediaLdr) {
+                            mediaLdr.visited = true;
+                            mediaLdr.active = true;
+                        }
+                    }
+                }
+                sourceComponent: SidebarPlayerControl {}
+            }
         }
         Component {
-            id: anime
-            Anime {}
+            id: animeLoaderComp
+            Loader {
+                id: animeLdr
+                property bool visited: false
+                active: visited || (swipeView.currentItem === animeLdr)
+                Connections {
+                    target: swipeView
+                    function onCurrentItemChanged() {
+                        if (swipeView.currentItem === animeLdr) {
+                            animeLdr.visited = true;
+                            animeLdr.active = true;
+                        }
+                    }
+                }
+                sourceComponent: Anime {}
+            }
         }
         Component {
             id: placeholder
