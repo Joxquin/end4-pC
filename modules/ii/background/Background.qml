@@ -585,7 +585,19 @@ Variants {
 
             WidgetCanvas {
                 id: widgetCanvas
-                anchors.fill: parent
+                width: parent.width
+                height: parent.height
+                readonly property real parallaxFactor: {
+                    var f = Config.options.background.parallax.widgetsFactor;
+                    return f / Config.options.background.parallax.workspaceZoom;
+                }
+                readonly property real baseWallpaperOffsetX: (bgRoot.screen.width - bgRoot.scaledWallpaperWidth) / 2
+                readonly property real baseWallpaperOffsetY: (bgRoot.screen.height - bgRoot.scaledWallpaperHeight) / 2
+                readonly property real wallpaperTotalOffsetX: wallpaper.x - baseWallpaperOffsetX
+                readonly property real wallpaperTotalOffsetY: wallpaper.y - baseWallpaperOffsetY
+                readonly property bool locked: GlobalStates.screenLocked
+                x: wallpaperTotalOffsetX * parallaxFactor * !locked
+                y: wallpaperTotalOffsetY * parallaxFactor * !locked
 
                 transitions: Transition {
                     PropertyAnimation {
