@@ -91,6 +91,8 @@ Singleton {
         return (kb / (1024 * 1024)).toFixed(1) + " GB"
     }
 
+    property bool historyActive: (GlobalStates?.sidebarRightOpen ?? false)
+
     function updateMemoryUsageHistory() {
         memoryUsageHistory = [...memoryUsageHistory, memoryUsedPercentage]
         if (memoryUsageHistory.length > historyLength) memoryUsageHistory.shift()
@@ -108,6 +110,7 @@ Singleton {
         if (diskUsageHistory.length > historyLength) diskUsageHistory.shift()
     }
     function updateHistories() {
+        if (!root.historyActive) return;
         updateMemoryUsageHistory()
         updateSwapUsageHistory()
         updateCpuUsageHistory()
