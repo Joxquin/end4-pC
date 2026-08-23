@@ -79,13 +79,6 @@ Item {
 
     Component.onCompleted: {
         Config.readWriteDelay = 0
-        Qt.callLater(() => {
-            for (let i = 0; i < root.pages.length; i++) {
-                let loader = pagesRepeater.itemAt(i)
-                if (loader) loader.active = true
-            }
-            if (profileLoader) profileLoader.active = true
-        })
     }
 
     ColumnLayout {
@@ -284,7 +277,9 @@ Item {
                             required property var index
                             source: modelData.component
 
-                            active: Config.ready && (root.currentPage === index || item !== null)
+                            property bool everLoaded: false
+                            active: Config.ready && (root.currentPage === index || everLoaded)
+                            onActiveChanged: if (active) everLoaded = true
 
                             anchors.fill: parent
 
