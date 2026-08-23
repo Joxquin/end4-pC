@@ -392,6 +392,20 @@ ContentPage {
                             Config.options.background.parallax.workspaceZoom = value / 100;
                         }
                     }
+
+                    ConfigSlider {
+                        visible: Config.options.background.parallax.enableWorkspace || Config.options.background.parallax.enableSidebar
+                        text: Translation.tr("Widget parallax factor")
+                        value: Config.options.background.parallax.widgetsFactor * 100
+                        usePercentTooltip: true
+                        buttonIcon: "widgets"
+                        from: 0
+                        to: 300
+                        stopIndicatorValues: [100, 120]
+                        onValueChanged: {
+                            Config.options.background.parallax.widgetsFactor = value / 100;
+                        }
+                    }
                 }
             }
         }
