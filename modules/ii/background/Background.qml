@@ -338,10 +338,10 @@ Variants {
                 sourceSize.width: bgRoot.scaledWallpaperWidth
                 sourceSize.height: bgRoot.scaledWallpaperHeight
                 fillMode: Image.PreserveAspectCrop
-                cache: true
+                cache: false
                 smooth: true
                 asynchronous: true
-                layer.enabled: true
+                layer.enabled: bgRoot.transitionProgress < 1.0
                 visible: false
             }
 
@@ -357,7 +357,7 @@ Variants {
                 cache: true
                 smooth: true
                 asynchronous: true
-                layer.enabled: true
+                layer.enabled: bgRoot.transitionProgress < 1.0 || blurLoader.active
                 visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                     && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
                 Behavior on x {
