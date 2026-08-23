@@ -11,18 +11,39 @@ Singleton {
 
     // Raw list loaded from JSON: [{name, tags, categories}]
     property var allSymbols: []
+    property bool isLoaded: false
 
-    // ── Load JSON ─────────────────────────────────────────────────────────
+    function ensureLoaded() {
+        if (root.isLoaded) return true;
+        if (symbolsFile.path === "") {
+            symbolsFile.path = `${Directories.assetsPath}/material_symbols_rounded.json`;
+        }
+        try {
+            const raw = symbolsFile.text();
+            if (raw && raw.length > 0) {
+                root.allSymbols = JSON.parse(raw);
+                root.isLoaded = true;
+                return true;
+            }
+        } catch (e) {
+            console.warn("MaterialSymbolsSearch: failed to parse JSON –", e);
+        }
+        return false;
+    }
+
+    // ── Load JSON on demand ───────────────────────────────────────────────
     FileView {
         id: symbolsFile
-        path: `${Directories.assetsPath}/material_symbols_rounded.json`
+        path: ""
         watchChanges: false
         onLoaded: {
-            try {
-                root.allSymbols = JSON.parse(symbolsFile.text());
-            } catch (e) {
-                console.warn("MaterialSymbolsSearch: failed to parse JSON –", e);
-                root.allSymbols = [];
+            if (!root.isLoaded && symbolsFile.text().length > 0) {
+                try {
+                    root.allSymbols = JSON.parse(symbolsFile.text());
+                    root.isLoaded = true;
+                } catch (e) {
+                    console.warn("MaterialSymbolsSearch: failed to parse JSON –", e);
+                }
             }
         }
     }
@@ -31,6 +52,7 @@ Singleton {
     // Returns a list of plain strings formatted as:
     //   "<name>  <tag1>, <tag2>, ..."
     function fuzzyQuery(query) {
+        root.ensureLoaded();
         if (!query || query.length === 0)
             return root.allSymbols.slice(0, 30).map(sym => _format(sym));
 
