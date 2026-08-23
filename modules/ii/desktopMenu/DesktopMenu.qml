@@ -36,46 +36,46 @@ Scope {
             : path
     }
 
-    // Wallpaper folder images
-    FolderListModel {
-        id: wallpaperFolder
-        folder: {
-            const wallPath = Config.options.background.wallpaperPath
-            if (!wallPath || wallPath.length === 0) return ""
-            const lastSlash = wallPath.lastIndexOf("/")
-            return "file://" + wallPath.substring(0, lastSlash)
-        }
-        showDirs: false
-        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp"]
-    }
-
-    property int carouselExtraCount: 5
-    property bool useDarkMode: Appearance.m3colors.darkmode
-    property var randomWallpapers: {
-        const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
-        let all = []
-        for (let i = 0; i < wallpaperFolder.count; i++) {
-            const fp = FileUtils.trimFileProtocol(wallpaperFolder.get(i, "filePath").toString())
-            if (fp !== current) all.push(fp)
-        }
-        for (let i = all.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [all[i], all[j]] = [all[j], all[i]]
-        }
-        return all.slice(0, carouselExtraCount)
-    }
-
-    property var carouselModel: {
-        const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
-        if (!current || current.length === 0) return randomWallpapers.map(p => root.displayPathFor(p))
-        return [root.displayPathFor(current), ...randomWallpapers.map(p => root.displayPathFor(p))]
-    }
-
     // Menu window
     Loader {
         active: GlobalStates.desktopMenuOpen
         sourceComponent: PanelWindow {
             id: menuWindow
+
+            // Wallpaper folder images
+            FolderListModel {
+                id: wallpaperFolder
+                folder: {
+                    const wallPath = Config.options.background.wallpaperPath
+                    if (!wallPath || wallPath.length === 0) return ""
+                    const lastSlash = wallPath.lastIndexOf("/")
+                    return "file://" + wallPath.substring(0, lastSlash)
+                }
+                showDirs: false
+                nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp"]
+            }
+
+            property int carouselExtraCount: 5
+            property bool useDarkMode: Appearance.m3colors.darkmode
+            property var randomWallpapers: {
+                const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
+                let all = []
+                for (let i = 0; i < wallpaperFolder.count; i++) {
+                    const fp = FileUtils.trimFileProtocol(wallpaperFolder.get(i, "filePath").toString())
+                    if (fp !== current) all.push(fp)
+                }
+                for (let i = all.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [all[i], all[j]] = [all[j], all[i]]
+                }
+                return all.slice(0, carouselExtraCount)
+            }
+
+            property var carouselModel: {
+                const current = FileUtils.trimFileProtocol(Config.options.background.wallpaperPath)
+                if (!current || current.length === 0) return randomWallpapers.map(p => root.displayPathFor(p))
+                return [root.displayPathFor(current), ...randomWallpapers.map(p => root.displayPathFor(p))]
+            }
 
             screen: GlobalStates.desktopMenuScreen ?? Quickshell.screens[0]
 
@@ -154,7 +154,7 @@ Scope {
                         Carousel {
                             anchors.fill: parent
                             anchors.margins: 10
-                            model: root.carouselModel
+                            model: menuWindow.carouselModel
                             onWallpaperSelected: (path) => {
                                 Wallpapers.select(path, Appearance.m3colors.darkmode)
                                 GlobalStates.desktopMenuOpen = false
