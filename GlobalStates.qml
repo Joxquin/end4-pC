@@ -96,6 +96,14 @@ Singleton {
         if (!overviewOpen) scheduleGc();
     }
 
+    onSessionOpenChanged: {
+        if (!sessionOpen) scheduleGc();
+    }
+
+    onDesktopMenuOpenChanged: {
+        if (!desktopMenuOpen) scheduleGc();
+    }
+
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {
             Notifications.timeoutAll();
