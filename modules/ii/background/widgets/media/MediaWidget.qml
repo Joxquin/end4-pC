@@ -34,7 +34,7 @@ AbstractBackgroundWidget {
         }
         return MprisController.activePlayer
     }
-    property var artUrl: currentPlayer?.trackArtUrl
+    property var artUrl: currentPlayer?.trackArtUrl ?? ""
     property string artDownloadLocation: Directories.coverArt
     property string artFileName: Qt.md5(artUrl)
     property string artFilePath: `${artDownloadLocation}/${artFileName}`
@@ -94,9 +94,12 @@ AbstractBackgroundWidget {
     property bool showLyrics: false
 
     property string displayedArtFilePath: {
+        if (!root.artUrl || root.artUrl.length === 0) return ""
+        if (root.artUrl.startsWith("data:")) return root.artUrl
+        if (root.artUrl.startsWith("file:/")) return root.artUrl
+        if (root.artUrl.startsWith("/")) return "file://" + root.artUrl
         if (!root.downloaded) return ""
-        if (root.artUrl && root.artUrl.startsWith("file://")) return root.artUrl
-        return root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+        return Qt.resolvedUrl(artFilePath)
     }
 
     implicitHeight: card.implicitHeight
@@ -109,19 +112,23 @@ AbstractBackgroundWidget {
             root.downloaded = false
             return
         }
-        if (root.artUrl.startsWith("file://")) {
+        if (root.artUrl.startsWith("data:") || root.artUrl.startsWith("file:/") || root.artUrl.startsWith("/")) {
             root.downloaded = true
             return
         }
-        coverArtDownloader.targetFile = root.artUrl
-        coverArtDownloader.artFilePath = root.artFilePath
-        root.downloaded = false
-        coverArtDownloader.running = true
+        if (root.artUrl.startsWith("http://") || root.artUrl.startsWith("https://")) {
+            coverArtDownloader.targetFile = root.artUrl
+            coverArtDownloader.artFilePath = root.artFilePath
+            root.downloaded = false
+            coverArtDownloader.running = true
+        } else {
+            root.downloaded = true
+        }
     }
 
     Process {
         id: coverArtDownloader
-        property string targetFile: root.artUrl
+        property string targetFile: root.artUrl ?? ""
         property string artFilePath: root.artFilePath
         command: ["bash", "-c", `[ -f ${artFilePath} ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
         onExited: { root.downloaded = true }
