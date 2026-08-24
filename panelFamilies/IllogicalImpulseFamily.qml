@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 
+import qs.services
 import qs.modules.common
 import qs.modules.ii.background
 import qs.modules.ii.bar
@@ -52,6 +53,6 @@ Scope {
     PanelLoader { component: Settings {} }
     PanelLoader { component: DesktopMenu {} }
     PanelLoader { component: DropShelfPanel {} }
-    PanelLoader { component: NiriBackdrop {} }
-    PanelLoader { component: ScreenFrame {} }
+    PanelLoader { extraCondition: WM.compositor === "niri"; component: NiriBackdrop {} }
+    PanelLoader { extraCondition: Config.options.bar.showFrame; component: ScreenFrame {} }
 }
