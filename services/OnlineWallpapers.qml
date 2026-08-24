@@ -45,6 +45,11 @@ Singleton {
             "1080p": "&w=1920&h=1080&fit=crop",
             "2K":    "&w=2560&h=1440&fit=crop",
             "4K":    "&w=3840&h=2160&fit=crop",
+        },
+        "konachan": {
+            "1080p": "1920x1080",
+            "2K":    "2560x1440",
+            "4K":    "3840x2160",
         }
     })
 
@@ -86,6 +91,8 @@ Singleton {
             _fetchUnsplash();
         } else if (root.provider === "pexels") {
             _fetchPexels();
+        } else if (root.provider === "konachan") {
+            _fetchKonachan();
         }
     }
 
@@ -214,6 +221,45 @@ Singleton {
         }
     }
 
+    function _fetchKonachan() {
+        const q = root.query.trim();
+        const baseTags = "rating:safe order:score";
+        const tags = q.length > 0 ? `${encodeURIComponent(q)}+${encodeURIComponent(baseTags)}` : encodeURIComponent(baseTags);
+        const url = `https://konachan.net/post.json?limit=24&page=${root.page}&tags=${tags}`;
+        fetchProc.provider = "konachan";
+        fetchProc.command  = ["curl", "-s", "-A", root.defaultUserAgent || "Mozilla/5.0", url];
+        fetchProc.running  = true;
+    }
+
+    function _parseKonachan(jsonStr) {
+        try {
+            const data = JSON.parse(jsonStr);
+            if (!Array.isArray(data)) {
+                root.fetchError("Konachan returned invalid data");
+                return;
+            }
+            root.totalPages = 100;
+            const newItems = data.filter(item => item && (item.file_url || item.sample_url || item.preview_url)).map(item => ({
+                id:               String(item.id),
+                thumb:            item.preview_url ?? item.sample_url ?? item.file_url,
+                full:             item.file_url ?? item.sample_url ?? item.preview_url,
+                provider:         "konachan",
+                title:            (item.tags ?? "").split(" ").slice(0, 5).join(" "),
+                author:           item.author ?? "",
+                authorUrl:        `https://konachan.net/post/show/${item.id}`,
+                likes:            item.score ?? 0,
+                width:            item.width ?? 0,
+                height:           item.height ?? 0,
+                downloadLocation: "",
+            }));
+
+            root.results = root.appending ? root.results.concat(newItems) : newItems;
+            root.fetched();
+        } catch (e) {
+            root.fetchError("Konachan parse error: " + e);
+        }
+    }
+
     // ─── Process ───
     Process {
         id: fetchProc
@@ -242,6 +288,8 @@ Singleton {
                 root._parseUnsplash(fetchProc.buffer);
             } else if (fetchProc.provider === "pexels") {
                 root._parsePexels(fetchProc.buffer);
+            } else if (fetchProc.provider === "konachan") {
+                root._parseKonachan(fetchProc.buffer);
             }
         }
     }
