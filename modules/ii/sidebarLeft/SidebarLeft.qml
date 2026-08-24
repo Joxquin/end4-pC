@@ -59,14 +59,21 @@ Scope { // Scope
         else root.pin = !root.pin;
     }
 
-    Component.onCompleted: {
-        root.sidebarContent = contentComponent.createObject(null, {
-            "scopeRoot": root,
-        });
-        sidebarLoader.item.contentParent.children = [root.sidebarContent];
+    function ensureContent() {
+        if (!root.sidebarContent) {
+            root.sidebarContent = contentComponent.createObject(null, {
+                "scopeRoot": root,
+            });
+            if (sidebarLoader.item) {
+                sidebarLoader.item.contentParent.children = [root.sidebarContent];
+            } else if (detachedSidebarLoader.item) {
+                detachedSidebarLoader.item.contentParent.children = [root.sidebarContent];
+            }
+        }
     }
 
     onDetachChanged: {
+        root.ensureContent();
         if (root.detach) {
             GlobalFocusGrab.removeDismissable(sidebarLoader.item) // Remove sidebar from the focus grab system
             sidebarContent.parent = null; // Detach content from sidebar
@@ -93,12 +100,16 @@ Scope { // Scope
             property bool reallyVisible: false
             visible: reallyVisible
 
-            Component.onCompleted: reallyVisible = GlobalStates.sidebarLeftOpen
+            Component.onCompleted: {
+                reallyVisible = GlobalStates.sidebarLeftOpen;
+                if (reallyVisible) root.ensureContent();
+            }
 
             Connections {
                 target: GlobalStates
                 function onSidebarLeftOpenChanged() {
                     if (GlobalStates.sidebarLeftOpen) {
+                        root.ensureContent();
                         closeAnimTimer.stop();
                         panelWindow.reallyVisible = true;
                     } else if (panelWindow.animatedEntrance) {
