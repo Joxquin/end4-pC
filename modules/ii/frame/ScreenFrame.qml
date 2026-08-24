@@ -64,77 +64,80 @@ Scope {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
+    Loader {
+        active: Config.options.bar.showFrame
+        sourceComponent: Variants {
+            model: Quickshell.screens
 
-        Item {
-            id: frameGroup
-            required property var modelData
+            Item {
+                id: frameGroup
+                required property var modelData
 
-            PanelWindow { // top
-                screen: frameGroup.modelData
-                exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameVisibleFor("top") ? root.frameThickness : 0
-                WlrLayershell.namespace: "quickshell:screenframe"
-                WlrLayershell.layer: WlrLayer.Top
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-                color: "transparent"
-                implicitHeight: root.frameThickness
-                anchors { top: true; left: true; right: true }
-                mask: Region {}
+                PanelWindow { // top
+                    screen: frameGroup.modelData
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: root.frameVisibleFor("top") ? root.frameThickness : 0
+                    WlrLayershell.namespace: "quickshell:screenframe"
+                    WlrLayershell.layer: WlrLayer.Top
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    color: "transparent"
+                    implicitHeight: root.frameThickness
+                    anchors { top: true; left: true; right: true }
+                    mask: Region {}
 
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("top") }
+                    Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("top") }
+                }
+
+                PanelWindow { // bottom
+                    screen: frameGroup.modelData
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: root.frameVisibleFor("bottom") ? root.frameThickness : 0
+                    WlrLayershell.namespace: "quickshell:screenframe"
+                    WlrLayershell.layer: WlrLayer.Top
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    color: "transparent"
+                    implicitHeight: root.frameThickness
+                    anchors { bottom: true; left: true; right: true }
+                    mask: Region {}
+
+                    Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("bottom") }
+                }
+
+                PanelWindow { // left
+                    screen: frameGroup.modelData
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: root.frameVisibleFor("left") ? root.frameThickness : 0
+                    WlrLayershell.namespace: "quickshell:screenframe"
+                    WlrLayershell.layer: WlrLayer.Top
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    color: "transparent"
+                    implicitWidth: root.frameThickness
+                    anchors { left: true; top: true; bottom: true }
+                    mask: Region {}
+
+                    Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("left") }
+                }
+
+                PanelWindow { // right
+                    screen: frameGroup.modelData
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: root.frameVisibleFor("right") ? root.frameThickness : 0
+                    WlrLayershell.namespace: "quickshell:screenframe"
+                    WlrLayershell.layer: WlrLayer.Top
+                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                    color: "transparent"
+                    implicitWidth: root.frameThickness
+                    anchors { right: true; top: true; bottom: true }
+                    mask: Region {}
+
+                    Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("right") }
+                }
+
+                FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopLeft }
+                FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopRight }
+                FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.BottomLeft }
+                FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.BottomRight }
             }
-
-            PanelWindow { // bottom
-                screen: frameGroup.modelData
-                exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameVisibleFor("bottom") ? root.frameThickness : 0
-                WlrLayershell.namespace: "quickshell:screenframe"
-                WlrLayershell.layer: WlrLayer.Top
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-                color: "transparent"
-                implicitHeight: root.frameThickness
-                anchors { bottom: true; left: true; right: true }
-                mask: Region {}
-
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("bottom") }
-            }
-
-            PanelWindow { // left
-                screen: frameGroup.modelData
-                exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameVisibleFor("left") ? root.frameThickness : 0
-                WlrLayershell.namespace: "quickshell:screenframe"
-                WlrLayershell.layer: WlrLayer.Top
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-                color: "transparent"
-                implicitWidth: root.frameThickness
-                anchors { left: true; top: true; bottom: true }
-                mask: Region {}
-
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("left") }
-            }
-
-            PanelWindow { // right
-                screen: frameGroup.modelData
-                exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameVisibleFor("right") ? root.frameThickness : 0
-                WlrLayershell.namespace: "quickshell:screenframe"
-                WlrLayershell.layer: WlrLayer.Top
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-                color: "transparent"
-                implicitWidth: root.frameThickness
-                anchors { right: true; top: true; bottom: true }
-                mask: Region {}
-
-                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("right") }
-            }
-
-            FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopLeft }
-            FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopRight }
-            FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.BottomLeft }
-            FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.BottomRight }
         }
     }
 }
