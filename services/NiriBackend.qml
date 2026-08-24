@@ -83,14 +83,17 @@ Scope {
     Process { id: actionProc }
 
     function updateAll() {
+        if (WM.compositor !== "niri") return;
         getWindows.running = true;
         getWorkspaces.running = true;
         getOutputs.running = true;
     }
 
     Component.onCompleted: {
-        updateAll();
-        eventStream.running = true;
+        if (WM.compositor === "niri") {
+            updateAll();
+            eventStream.running = true;
+        }
     }
 
     Process {
@@ -148,13 +151,16 @@ Scope {
 
     Process {
         id: eventStream
+        running: false
         command: ["niri", "msg", "-j", "event-stream"]
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: (line) => { if (line.trim().length > 0) refreshDebounce.restart() }
         }
-        onExited: restartTimer.restart()
+        onExited: {
+            if (WM.compositor === "niri") restartTimer.restart();
+        }
     }
-    Timer { id: restartTimer; interval: 1000; onTriggered: eventStream.running = true }
+    Timer { id: restartTimer; interval: 1000; onTriggered: { if (WM.compositor === "niri") eventStream.running = true; } }
     Timer { id: refreshDebounce; interval: 80; onTriggered: root.updateAll() }
 }

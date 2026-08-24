@@ -212,6 +212,8 @@ Item {
                     anchors.fill: parent
                     anchors.margins: Appearance.sizes.wallpaperSelectorItemMargins
                     source: delegateItem.model.thumb
+                    sourceSize.width: grid.cellWidth
+                    sourceSize.height: grid.cellHeight
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
