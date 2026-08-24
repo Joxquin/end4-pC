@@ -340,6 +340,7 @@ MouseArea {
                                 { value: "wallhaven", displayName: Translation.tr("Wallhaven") },
                                 { value: "unsplash",  displayName: Translation.tr("Unsplash") },
                                 { value: "pexels",    displayName: Translation.tr("Pexels") },
+                                { value: "konachan",  displayName: Translation.tr("Konachan") },
                             ]
                             textRole: "displayName"
                             onCurrentIndexChanged: {
