@@ -12,6 +12,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import Quickshell.Wayland
 
 Item {
     id: root
@@ -19,6 +20,10 @@ Item {
     property bool vertical: false
     property bool borderless: Config.options.bar.borderless
     property bool isMaterial: Config.options.bar.cornerStyle === 3
+    readonly property bool hasActiveWindowInLayout: (Config.options.bar.layouts.leftLayout ?? []).includes("activeWindow")
+    readonly property bool hasActiveWindowFocused: Boolean(ToplevelManager.activeToplevel?.title && ToplevelManager.activeToplevel?.title.length > 0)
+    readonly property bool compact: hasActiveWindowInLayout && hasActiveWindowFocused
+
     readonly property MprisPlayer activePlayer: {
         const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
         if (preferred.length === 0) return MprisController.activePlayer
@@ -91,6 +96,10 @@ Item {
                 Math.min(rowLayout.implicitWidth + 8, Config.options.bar.media.maxWidth)
             ))
     implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : Appearance.sizes.barHeight
+
+    Behavior on implicitWidth {
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
 
     Timer {
         running: activePlayer?.playbackState == MprisPlaybackState.Playing
@@ -186,9 +195,10 @@ Item {
                 }
             }
             StyledText {
-                visible: Config.options.bar.verbose
+                visible: Config.options.bar.verbose && !root.compact
                 Layout.alignment: Qt.AlignVCenter
                 Layout.fillWidth: true
+                Layout.maximumWidth: Math.max(60, Config.options.bar.media.maxWidth - 30)
                 Layout.rightMargin: 0
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -260,6 +270,7 @@ Item {
                     }
 
                     ColumnLayout {
+                        visible: !root.compact
                         spacing: -3
                         Layout.alignment: Qt.AlignVCenter
                         Layout.topMargin: 2
@@ -335,6 +346,7 @@ Item {
 
                     // Title + Artist
                     ColumnLayout {
+                        visible: !root.compact
                         spacing: -4
                         Layout.alignment: Qt.AlignVCenter
                         Layout.topMargin: 2

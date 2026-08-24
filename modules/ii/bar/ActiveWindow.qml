@@ -41,8 +41,11 @@ Item {
         console.log("iconPath:", root.mainAppIconSource)
     }
 
-    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 6, 280)
+    readonly property real maxTextWidth: Config.options.bar.cornerStyle === 3 ? 150 : 240
+    implicitWidth:  vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 6, maxTextWidth)
     implicitHeight: vertical ? iconItem.implicitHeight : Appearance.sizes.barHeight
+    Layout.fillHeight: true
+    Layout.maximumWidth: maxTextWidth
 
     // Vertical
     Item {
@@ -72,6 +75,7 @@ Item {
 
         StyledText {
             Layout.fillWidth: true
+            Layout.maximumWidth: root.maxTextWidth - 6
             font.pixelSize: Appearance.font.pixelSize.smaller
             color: Appearance.colors.colSubtext
             elide: Text.ElideRight
@@ -81,6 +85,7 @@ Item {
         }
         StyledText {
             Layout.fillWidth: true
+            Layout.maximumWidth: root.maxTextWidth - 6
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colOnLayer0
             elide: Text.ElideRight
