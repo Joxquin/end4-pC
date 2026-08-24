@@ -314,7 +314,9 @@ Item {
 
                     Loader {
                         id: profileLoader
-                        active: false
+                        property bool everLoaded: false
+                        active: Config.ready && (root.showingProfile || everLoaded)
+                        onActiveChanged: if (active) everLoaded = true
                         anchors.fill: parent
                         source: Qt.resolvedUrl("pages/Profile.qml")
 
@@ -323,6 +325,12 @@ Item {
                         enabled: isActive
                         visible: isActive
                         anchors.topMargin: isActive ? 0 : 12
+
+                        onLoaded: {
+                            if (root.showingProfile) {
+                                GlobalStates.currentPageInstance = item;
+                            }
+                        }
 
                         onIsActiveChanged: {
                             if (isActive && item) {
