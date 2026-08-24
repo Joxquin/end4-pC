@@ -29,6 +29,7 @@ import qs.modules.ii.screenshotResult
 
 Scope {
     PanelLoader { extraCondition: !Config.options.bar.vertical; component: Bar {} }
+    PanelLoader { component: BarPopupOverlay {} }
     PanelLoader { component: Background {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
     PanelLoader { component: Lock {} }
