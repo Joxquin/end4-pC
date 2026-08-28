@@ -271,8 +271,8 @@ Variants {
                 cache: true
                 smooth: true
                 asynchronous: true
-                layer.enabled: true
-                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                layer.enabled: blurLoader.active || fastBlurLoader.active
+                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                     && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
@@ -284,8 +284,9 @@ Variants {
             ShaderEffect {
                 id: transitionEffect
                 anchors.fill: parent
-                visible: !blurLoader.active && bgRoot.wallpaperAnimation !== "" && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
-                    && bgRoot.transitionProgress < 1.0
+                layer.enabled: blurLoader.active || fastBlurLoader.active
+                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                    && bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0
 
                 property var fromImage: previousWallpaper
                 property var toImage: wallpaper
@@ -333,6 +334,16 @@ Variants {
                         anchors.fill: parent
                         color: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.7)
                     }
+                }
+            }
+
+            Loader {
+                id: fastBlurLoader
+                active: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo
+                anchors.fill: parent
+                sourceComponent: FastBlur {
+                    source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                    radius: 48
                 }
             }
 

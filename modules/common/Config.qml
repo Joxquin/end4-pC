@@ -223,6 +223,7 @@ Singleton {
                 property string lockWall: ""
                 property bool widgetsLocked: false
                 property bool showGrid: true
+                property bool showBlur: false
                 property bool showSnapLines: true
                 property JsonObject widgets: JsonObject {
                     property JsonObject clock: JsonObject {
