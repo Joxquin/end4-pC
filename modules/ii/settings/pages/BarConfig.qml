@@ -301,7 +301,7 @@ ContentPage {
                     icon: "eraser_size_1"
                     text: Translation.tr("Frame thickness")
                     value: Config.options.bar.frameThickness
-                    from: 1
+                    from: 2
                     to: 10
                     stepSize: 1
                     onValueChanged: {
