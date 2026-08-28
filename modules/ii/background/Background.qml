@@ -339,7 +339,7 @@ Variants {
 
             Loader {
                 id: fastBlurLoader
-                active: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo
+                active: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo || (Config.options.overview.style === "niri" && GlobalStates.overviewOpen && Config.options.overview.enable)
                 anchors.fill: parent
                 sourceComponent: FastBlur {
                     source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
