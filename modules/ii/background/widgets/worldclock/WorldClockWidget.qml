@@ -312,6 +312,7 @@ AbstractBackgroundWidget {
 
                         Layout.preferredWidth: 132
                         Layout.preferredHeight: 120
+                        radius: Appearance.rounding?.verylarge ?? 30
 
                         backgroundColor: cityData?.isDay ?? true
                             ? Appearance.colors.colPrimary
