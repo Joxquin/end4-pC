@@ -97,8 +97,8 @@ Variants {
 
         readonly property real splitFraction: {
             switch (Config.options.background.splitRatio) {
-                case "25": return 0.25
-                case "50": return 0.50
+                case "25": return 0.28
+                case "50": return 0.54
                 default:   return 1.0
             }
         }
@@ -353,25 +353,55 @@ Variants {
                 active: bgRoot.userBlurActive || bgRoot.overviewBlurActive
                 anchors.fill: parent
                 sourceComponent: Item {
+                    id: blurRoot
                     anchors.fill: parent
 
+                    readonly property real fadeWidth: 140
+                    readonly property int fadeSteps: 28
+                    readonly property real blurRadius: 48
+                    readonly property real totalWidth: bgRoot.blurFullScreen ? blurRoot.width : blurRoot.width * bgRoot.splitFraction
+                    property real coreWidth: Math.max(0, blurRoot.totalWidth - (bgRoot.blurFullScreen ? 0 : blurRoot.fadeWidth))
+
+                    Behavior on coreWidth {
+                        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                    }
+
                     Item {
-                        id: blurClip
+                        id: coreClip
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
-                        width: bgRoot.blurFullScreen ? parent.width : parent.width * bgRoot.splitFraction
+                        width: blurRoot.coreWidth
                         clip: true
-
-                        Behavior on width {
-                            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
-                        }
+                        visible: width > 0
 
                         FastBlur {
-                            width: blurClip.parent.width
-                            height: blurClip.parent.height
+                            width: blurRoot.width
+                            height: blurRoot.height
                             source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
-                            radius: 48
+                            radius: blurRoot.blurRadius
+                        }
+                    }
+
+                    Repeater {
+                        model: bgRoot.blurFullScreen ? 0 : blurRoot.fadeSteps
+                        delegate: Item {
+                            id: fadeStep
+                            required property int index
+                            readonly property real stepWidth: blurRoot.fadeWidth / blurRoot.fadeSteps
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            x: blurRoot.coreWidth + index * stepWidth
+                            width: stepWidth
+                            clip: true
+
+                            FastBlur {
+                                x: -fadeStep.x
+                                width: blurRoot.width
+                                height: blurRoot.height
+                                source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                                radius: blurRoot.blurRadius * Math.pow(1 - (index + 1) / blurRoot.fadeSteps, 1.5)
+                            }
                         }
                     }
                 }
