@@ -359,50 +359,30 @@ Variants {
                     anchors.fill: parent
 
                     readonly property real fadeWidth: 140
-                    readonly property int fadeSteps: 28
                     readonly property real blurRadius: 48
-                    readonly property real totalWidth: bgRoot.blurFullScreen ? blurRoot.width : blurRoot.width * bgRoot.splitFraction
-                    property real coreWidth: Math.max(0, blurRoot.totalWidth - (bgRoot.blurFullScreen ? 0 : blurRoot.fadeWidth))
+                    readonly property bool alignRight: Config.options.background.splitSide === "right"
+                    property real coreWidth: bgRoot.blurFullScreen ? blurRoot.width : blurRoot.width * bgRoot.splitFraction
 
                     Behavior on coreWidth {
                         NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                     }
 
-                    Item {
-                        id: coreClip
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        width: blurRoot.coreWidth
-                        clip: true
-                        visible: width > 0
+                    FastBlur {
+                        id: blurLayer
+                        anchors.fill: parent
+                        source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                        radius: blurRoot.blurRadius
 
-                        FastBlur {
-                            width: blurRoot.width
-                            height: blurRoot.height
-                            source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
-                            radius: blurRoot.blurRadius
-                        }
-                    }
-
-                    Repeater {
-                        model: bgRoot.blurFullScreen ? 0 : blurRoot.fadeSteps
-                        delegate: Item {
-                            id: fadeStep
-                            required property int index
-                            readonly property real stepWidth: blurRoot.fadeWidth / blurRoot.fadeSteps
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            x: blurRoot.coreWidth + index * stepWidth
-                            width: stepWidth
-                            clip: true
-
-                            FastBlur {
-                                x: -fadeStep.x
-                                width: blurRoot.width
-                                height: blurRoot.height
-                                source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
-                                radius: blurRoot.blurRadius * Math.pow(1 - (index + 1) / blurRoot.fadeSteps, 1.5)
+                        layer.enabled: !bgRoot.blurFullScreen
+                        layer.effect: OpacityMask {
+                            maskSource: Rectangle {
+                                width: blurLayer.width
+                                height: blurLayer.height
+                                gradient: Gradient {
+                                    orientation: Gradient.Horizontal
+                                    GradientStop { position: blurRoot.alignRight ? 1 - (blurRoot.coreWidth / blurRoot.width) : Math.max(0, (blurRoot.coreWidth - blurRoot.fadeWidth) / blurRoot.width); color: blurRoot.alignRight ? "transparent" : "white" }
+                                    GradientStop { position: blurRoot.alignRight ? Math.min(1, 1 - (blurRoot.coreWidth - blurRoot.fadeWidth) / blurRoot.width) : Math.min(1, blurRoot.coreWidth / blurRoot.width); color: blurRoot.alignRight ? "white" : "transparent" }
+                                }
                             }
                         }
                     }

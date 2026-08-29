@@ -249,6 +249,19 @@ ContentPage {
                     }
                 }
 
+                ConfigSelectionArray {
+                    text: Translation.tr("Split blur side")
+                    icon: "align_horizontal_left"
+                    currentValue: Config.options.background.splitSide
+                    options: [
+                        { "displayName": Translation.tr("Left"),  "icon": "align_horizontal_left",  "value": "left" },
+                        { "displayName": Translation.tr("Right"), "icon": "align_horizontal_right", "value": "right" },
+                    ]
+                    onSelected: newValue => {
+                        Config.options.background.splitSide = newValue
+                    }
+                }
+
                 ConfigSpinBox {
                     icon: "timer"
                     text: Translation.tr("Wallpaper change interval (min)")
