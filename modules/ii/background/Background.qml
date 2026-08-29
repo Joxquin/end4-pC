@@ -351,7 +351,8 @@ Variants {
 
             Loader {
                 id: fastBlurLoader
-                active: bgRoot.userBlurActive || bgRoot.overviewBlurActive
+                active: (bgRoot.userBlurActive || bgRoot.overviewBlurActive)
+                    && (!bgRoot.centeredWallpaperEnabled || bgRoot.blurFullScreen)
                 anchors.fill: parent
                 sourceComponent: Item {
                     id: blurRoot
