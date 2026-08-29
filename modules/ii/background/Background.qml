@@ -95,6 +95,17 @@ Variants {
         property string previousWallpaperSource: Config.options.background.wallpaperPath
         property bool videoRevealed: false
 
+        readonly property real splitFraction: {
+            switch (Config.options.background.splitRatio) {
+                case "25": return 0.25
+                case "50": return 0.50
+                default:   return 1.0
+            }
+        }
+        readonly property bool overviewBlurActive: Config.options.overview.style === "niri" && GlobalStates.overviewOpen && Config.options.overview.enable
+        readonly property bool userBlurActive: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo
+        readonly property bool blurFullScreen: bgRoot.overviewBlurActive || bgRoot.splitFraction >= 1.0
+
         //centered Wallpaper
         property bool centeredWallpaperEnabled: Config.options.background.centeredWallpaper && (!Config.options.background.centeredWallpaperOnlyWhenLocked || GlobalStates.screenLocked)
         property int centeredWallpaperShape: getShapeFromName(Config.options.background.centeredWallpaperShape)
@@ -271,8 +282,8 @@ Variants {
                 cache: true
                 smooth: true
                 asynchronous: true
-                layer.enabled: blurLoader.active || fastBlurLoader.active
-                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                layer.enabled: blurLoader.active
+                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                     && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
                 onStatusChanged: {
                     if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
@@ -284,8 +295,8 @@ Variants {
             ShaderEffect {
                 id: transitionEffect
                 anchors.fill: parent
-                layer.enabled: blurLoader.active || fastBlurLoader.active
-                visible: !blurLoader.active && !fastBlurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
+                layer.enabled: blurLoader.active
+                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
                     && bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0
 
                 property var fromImage: previousWallpaper
@@ -339,11 +350,30 @@ Variants {
 
             Loader {
                 id: fastBlurLoader
-                active: Config.options.background.showBlur && !bgRoot.wallpaperIsVideo || (Config.options.overview.style === "niri" && GlobalStates.overviewOpen && Config.options.overview.enable)
+                active: bgRoot.userBlurActive || bgRoot.overviewBlurActive
                 anchors.fill: parent
-                sourceComponent: FastBlur {
-                    source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
-                    radius: 48
+                sourceComponent: Item {
+                    anchors.fill: parent
+
+                    Item {
+                        id: blurClip
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        width: bgRoot.blurFullScreen ? parent.width : parent.width * bgRoot.splitFraction
+                        clip: true
+
+                        Behavior on width {
+                            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                        }
+
+                        FastBlur {
+                            width: blurClip.parent.width
+                            height: blurClip.parent.height
+                            source: bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0 ? wallpaper : transitionEffect
+                            radius: 48
+                        }
+                    }
                 }
             }
 
