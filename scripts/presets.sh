@@ -1,29 +1,48 @@
 #!/usr/bin/env bash
 # presets.sh - manage shell config presets | just for fun I could have done it from quickshell directly =P
 # Usage:
-#   presets.sh --save <name>
-#   presets.sh --remove <name>
-#   presets.sh --apply <name>
+#   presets.sh --save <name> [description]
+#   presets.sh --remove <name> [--online]
+#   presets.sh --apply <name> [--online]
 
 CONFIG_DIR="$HOME/.config/illogical-impulse"
 CONFIG_FILE="$CONFIG_DIR/config.json"
-PRESETS_DIR="$CONFIG_DIR/presets"
+LOCAL_PRESETS_DIR="$CONFIG_DIR/presets"
+ONLINE_PRESETS_DIR="$HOME/.cache/quickshell/presets"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWITCHWALL="$SCRIPT_DIR/colors/switchwall.sh"
 
-mkdir -p "$PRESETS_DIR"
+mkdir -p "$LOCAL_PRESETS_DIR" "$ONLINE_PRESETS_DIR"
 
 action="$1"
-name="$2"
+shift
+
+online=false
+args=()
+for arg in "$@"; do
+    if [ "$arg" = "--online" ]; then
+        online=true
+    else
+        args+=("$arg")
+    fi
+done
+
+name="${args[0]}"
+description="${args[1]}"
 
 if [ -z "$name" ]; then
     echo "Error: missing preset name" >&2
     exit 1
 fi
 
+if $online; then
+    PRESETS_DIR="$ONLINE_PRESETS_DIR"
+else
+    PRESETS_DIR="$LOCAL_PRESETS_DIR"
+fi
+
 case "$action" in
     --save)
-        description="$3"
         jq 'del(._presetMeta)' "$CONFIG_FILE" > "$PRESETS_DIR/${name}.json"
         if [ -n "$description" ]; then
             jq --arg desc "$description" '._presetMeta = {"description": $desc}' \
@@ -33,6 +52,9 @@ case "$action" in
         ;;
     --remove)
         rm -f "$PRESETS_DIR/${name}.json"
+        if $online; then
+            rm -rf "$ONLINE_PRESETS_DIR/assets/${name}"
+        fi
         ;;
     --apply)
         preset_file="$PRESETS_DIR/${name}.json"

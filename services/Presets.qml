@@ -13,10 +13,18 @@ Singleton {
     id: root
 
     property alias folderModel: presetsFolderModel
+    property alias onlineFolderModel: onlinePresetsFolderModel
 
     FolderListModel {
         id: presetsFolderModel
         folder: Qt.resolvedUrl(Directories.userPresetsPath)
+        showDirs: false
+        nameFilters: ["*.json"]
+    }
+
+    FolderListModel {
+        id: onlinePresetsFolderModel
+        folder: Qt.resolvedUrl(`${Quickshell.env("HOME")}/.cache/quickshell/presets`)
         showDirs: false
         nameFilters: ["*.json"]
     }
@@ -27,6 +35,12 @@ Singleton {
         presetsFolderModel.folder = current
     }
 
+    function refreshOnline() {
+        const current = onlinePresetsFolderModel.folder
+        onlinePresetsFolderModel.folder = ""
+        onlinePresetsFolderModel.folder = current
+    }
+
     Process {
         id: saveProc
         onExited: root.refresh()
@@ -35,6 +49,11 @@ Singleton {
     Process {
         id: deleteProc
         onExited: root.refresh()
+    }
+
+    Process {
+        id: deleteOnlineProc
+        onExited: root.refreshOnline()
     }
 
     function save(rawInput) {
@@ -64,8 +83,20 @@ Singleton {
         Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name])
     }
 
+    function applyOnline(name) {
+        GlobalStates.settingsOpen = false
+        Wallpapers.confirmedPath = ""
+        Wallpapers.previewPath = ""
+        Quickshell.execDetached(["bash", Directories.presetsScriptPath, "--apply", name, "--online"])
+    }
+
     function remove(name) {
         deleteProc.command = ["bash", Directories.presetsScriptPath, "--remove", name]
         deleteProc.running = true
+    }
+
+    function removeOnline(name) {
+        deleteOnlineProc.command = ["bash", Directories.presetsScriptPath, "--remove", name, "--online"]
+        deleteOnlineProc.running = true
     }
 }
