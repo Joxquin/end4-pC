@@ -491,6 +491,35 @@ ContentPage {
                     }
                 }
 
+                RippleButton {
+                    Layout.fillWidth: true
+                    implicitHeight: 42
+                    buttonRadius: Appearance.rounding.small
+                    colBackground: "transparent"
+                    colBackgroundHover: "transparent"
+                    colRipple: Appearance.colors.colLayer1Active
+                    horizontalPadding: 8
+                    onClicked: importDialog.open()
+                    contentItem: RowLayout {
+                        spacing: 10
+                        MaterialSymbol {
+                            text: "upload"
+                            iconSize: Appearance.font.pixelSize.larger
+                            color: Appearance.colors.colOnLayer1
+                        }
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: Translation.tr("Import ZIP")
+                            color: Appearance.colors.colOnLayer1
+                        }
+                        MaterialSymbol {
+                            text: "chevron_right"
+                            iconSize: Appearance.font.pixelSize.larger
+                            color: Appearance.colors.colSubtext
+                        }
+                    }
+                }
+
                 ConfigSwitch {
                     buttonIcon: "cloud_download"
                     text: Translation.tr("Show online presets")
@@ -501,6 +530,30 @@ ContentPage {
                     }
                 }
             }
+
+            Loader {
+                id: importDialogLoader
+                active: false
+                sourceComponent: Item {
+                    // Use kdialog like wallpaper selector for consistency, fallback to Qt dialog
+                    Component.onCompleted: {
+                        const proc = importFilePicker
+                        proc.command = ["kdialog", "--getopenfilename", Quickshell.env("HOME"), "*.zip | Preset ZIP"]
+                        proc.running = true
+                    }
+                    Process {
+                        id: importFilePicker
+                        stdout: StdioCollector { id: importCollector }
+                        onExited: (code) => {
+                            const path = importCollector.text.trim()
+                            if (code === 0 && path.length > 0) Presets.importZip(path)
+                            importDialogLoader.active = false
+                        }
+                    }
+                }
+            }
+            // Helper to trigger
+            Item { id: importDialog; function open(){ importDialogLoader.active = true } }
 
             StyledText {
                 Layout.fillWidth: true
@@ -552,6 +605,8 @@ ContentPage {
                         description: presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset")
                         onApply: () => Presets.apply(presetDelegate.presetName)
                         onRemove: () => Presets.remove(presetDelegate.presetName)
+                        onOverwrite: () => Presets.overwrite(presetDelegate.presetName)
+                        onExportZip: () => Presets.exportZip(presetDelegate.presetName)
                     }
                 }
             }
@@ -598,7 +653,61 @@ ContentPage {
                             description: onlineDelegate.presetDescription !== "" ? onlineDelegate.presetDescription : Translation.tr("Downloaded preset")
                             onApply: () => Presets.applyOnline(onlineDelegate.presetName)
                             onRemove: () => Presets.removeOnline(onlineDelegate.presetName)
+                            onOverwrite: () => Presets.overwrite(onlineDelegate.presetName)
+                            onExportZip: () => Presets.exportZip(onlineDelegate.presetName)
                         }
+                    }
+                }
+            }
+
+        }
+
+        ContentSection {
+            icon: "upload"
+            shape: MaterialShape.Shape.Slanted
+            title: Translation.tr("Imported")
+            visible: Presets.importedFolderModel.count > 0
+
+            Flow {
+                Layout.fillWidth: true
+                width: parent.width
+                spacing: 12
+
+                Repeater {
+                    model: Presets.importedFolderModel
+                    delegate: PresetsCard {
+                        id: importedDelegate
+                        required property string fileName
+                        required property string filePath
+
+                        property string presetName: fileName.replace(".json", "")
+                        property string presetWallpaper: ""
+                        property string presetDescription: ""
+
+                        FileView {
+                            path: importedDelegate.filePath
+                            onLoaded: {
+                                try {
+                                    const data = JSON.parse(text())
+                                    const rawWallpaper = data?.background?.wallpaperPath ?? ""
+                                    const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
+                                    importedDelegate.presetWallpaper = isVideo
+                                        ? (data?.background?.thumbnailPath ?? "")
+                                        : rawWallpaper
+                                    importedDelegate.presetDescription = data?._presetMeta?.description ?? ""
+                                } catch (e) {
+                                    console.log("Failed to parse imported preset:", e)
+                                }
+                            }
+                        }
+
+                        imageSource: importedDelegate.presetWallpaper
+                        title: importedDelegate.presetName
+                        description: importedDelegate.presetDescription !== "" ? importedDelegate.presetDescription : Translation.tr("Imported preset")
+                        onApply: () => Presets.applyImported(importedDelegate.presetName)
+                        onRemove: () => Presets.removeImported(importedDelegate.presetName)
+                        onOverwrite: () => Presets.overwrite(importedDelegate.presetName)
+                        onExportZip: () => Presets.exportZip(importedDelegate.presetName)
                     }
                 }
             }
