@@ -361,7 +361,8 @@ Variants {
                 sourceSize.width: bgRoot.scaledWallpaperWidth
                 sourceSize.height: bgRoot.scaledWallpaperHeight
                 fillMode: Image.PreserveAspectCrop
-                cache: false
+                cache: true
+                mipmap: true
                 smooth: true
                 asynchronous: true
                 layer.enabled: bgRoot.transitionProgress < 1.0
@@ -379,6 +380,7 @@ Variants {
                 fillMode: Image.PreserveAspectCrop
                 cache: true
                 smooth: true
+                mipmap: true
                 asynchronous: true
                 layer.enabled: bgRoot.transitionProgress < 1.0 || blurLoader.active
                 visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
@@ -570,6 +572,7 @@ Variants {
                     source: bgRoot.wallpaperPath
                     fillMode: Image.PreserveAspectCrop
                     cache: false
+                    mipmap: true
                     antialiasing: true
                     sourceSize.width: parent.width
                     sourceSize.height: parent.height
