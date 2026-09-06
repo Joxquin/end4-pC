@@ -238,6 +238,55 @@ Item {
                                         color: Appearance.colors.colOnPrimaryContainer
                                         visible: avatarImage.status === Image.Error
                                     }
+
+                                    Rectangle {
+                                        id: avatarSyncOverlay
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 0.7)
+                                        visible: opacity > 0
+                                        opacity: (root.isSyncing || avatarMouseArea.containsMouse) ? 1 : 0
+
+                                        Behavior on opacity {
+                                            NumberAnimation { duration: 200 }
+                                        }
+
+                                        Item {
+                                            id: avatarSyncWrapper
+                                            anchors.centerIn: parent
+                                            width: 24
+                                            height: 24
+
+                                            MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                iconSize: 24
+                                                text: "sync"
+                                                color: Appearance.colors.colPrimary
+                                            }
+
+                                            RotationAnimation {
+                                                target: avatarSyncWrapper
+                                                from: 0
+                                                to: 360
+                                                duration: 1000
+                                                loops: root.isSyncing ? Animation.Infinite : 1
+                                                running: root.isSyncing
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: avatarMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.triggerGoogleSync()
+                                    }
+
+                                    StyledToolTip {
+                                        extraVisibleCondition: avatarMouseArea.containsMouse
+                                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
+                                    }
                                 }
 
                                 StyledText {
@@ -506,21 +555,13 @@ Item {
                 bottom: parent.bottom
                 left: parent.left
             }
-            color: uptimeMouseArea.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
+            color: upMouseArea.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
             radius: height / 2
             implicitWidth: uptimeRow.implicitWidth + 24
             implicitHeight: uptimeRow.implicitHeight + 8
 
             Behavior on color {
                 ColorAnimation { duration: 150 }
-            }
-
-            MouseArea {
-                id: uptimeMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.triggerGoogleSync()
             }
 
             Row {
@@ -534,66 +575,95 @@ Item {
                     width: 25
                     height: 25
 
-                    Item {
-                        id: syncIconWrapper
-                        anchors.fill: parent
-                        visible: opacity > 0
-                        opacity: (root.isSyncing || uptimeMouseArea.containsMouse) ? 1 : 0
-
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200 }
-                        }
-
-                        MaterialSymbol {
-                            anchors.centerIn: parent
-                            iconSize: 22
-                            text: "sync"
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        RotationAnimation {
-                            id: syncRotateAnim
-                            target: syncIconWrapper
-                            from: 0
-                            to: 360
-                            duration: 1000
-                            loops: root.isSyncing ? Animation.Infinite : 1
-                            running: root.isSyncing
-                        }
-                    }
-
                     CustomIcon {
                         id: distroIcon
                         anchors.fill: parent
                         source: Config.options.custom.distroIcon || SystemInfo.distroIcon
                         colorize: Config.options.custom.colorizeIcon
                         color: Appearance.colors.colOnLayer0
-                        visible: opacity > 0
-                        opacity: (root.isSyncing || uptimeMouseArea.containsMouse) ? 0 : 1
+                    }
 
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200 }
+                    MouseArea {
+                        id: distroMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.showIconPickerDialog = true
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: distroMouseArea.containsMouse
+                        text: Translation.tr("Change distro icon")
+                    }
+                }
+
+                Item {
+                    id: upSyncItem
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitWidth: upRowContent.implicitWidth
+                    implicitHeight: upRowContent.implicitHeight
+
+                    Row {
+                        id: upRowContent
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Item {
+                            id: syncIconWrapper
+                            width: 18
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: opacity > 0
+                            opacity: (root.isSyncing || upMouseArea.containsMouse) ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation { duration: 200 }
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                iconSize: 18
+                                text: "sync"
+                                color: Appearance.colors.colPrimary
+                            }
+
+                            RotationAnimation {
+                                id: syncRotateAnim
+                                target: syncIconWrapper
+                                from: 0
+                                to: 360
+                                duration: 1000
+                                loops: root.isSyncing ? Animation.Infinite : 1
+                                running: root.isSyncing
+                            }
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.pixelSize: Appearance.font.pixelSize.normal
+                            color: upMouseArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
+                            text: Translation.tr("Up • %1").arg(DateTime.uptime)
+                            textFormat: Text.MarkdownText
+
+                            Behavior on color {
+                                ColorAnimation { duration: 150 }
+                            }
                         }
                     }
 
                     MouseArea {
+                        id: upMouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.showIconPickerDialog = true
+                        onClicked: root.triggerGoogleSync()
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: upMouseArea.containsMouse
+                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
                     }
                 }
-
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer0
-                    text: Translation.tr("Up • %1").arg(DateTime.uptime)
-                    textFormat: Text.MarkdownText
-                }
-            }
-
-            StyledToolTip {
-                text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
             }
         }
 
