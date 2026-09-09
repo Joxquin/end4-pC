@@ -17,13 +17,20 @@ Singleton {
 
     property string thumbgenScriptPath: `${FileUtils.trimFileProtocol(Directories.scriptPath)}/thumbnails/thumbgen-venv.sh`
     property string generateThumbnailsMagickScriptPath: `${FileUtils.trimFileProtocol(Directories.scriptPath)}/thumbnails/generate-thumbnails-magick.sh`
+    function getCleanDirPath(path) {
+        if (!path) return "";
+        return FileUtils.trimFileProtocol(path.toString()).replace(/\/+$/, "");
+    }
+
     property alias directory: folderModel.folder
-    readonly property string effectiveDirectory: FileUtils.trimFileProtocol(folderModel.folder.toString())
+    readonly property string effectiveDirectory: getCleanDirPath(folderModel.folder)
     property url defaultFolder: Qt.resolvedUrl(`${Directories.pictures}/Wallpapers`)
     property alias folderModel: folderModel // Expose for direct binding when needed
     property alias wallpaperModel: wallpaperModel
     property string sortMode: Config.options.wallpaperSelector?.sortMode || "custom"
+    onSortModeChanged: debounceRebuildTimer.restart()
     property var orderMap: ({})
+    property bool orderLoaded: false
     property string searchQuery: ""
     readonly property list<string> extensions: [ // TODO: add videos
         "jpg", "jpeg", "png", "webp", "avif", "bmp", "svg"
@@ -200,21 +207,49 @@ Singleton {
                 console.log("[Wallpapers] Error parsing wallpaper_order.json:", e);
                 root.orderMap = {};
             }
+            root.orderLoaded = true;
             debounceRebuildTimer.restart();
         }
         onLoadFailed: (error) => {
             root.orderMap = {};
+            root.orderLoaded = true;
             debounceRebuildTimer.restart();
         }
     }
 
-    function saveCustomOrder() {
-        if (!orderFileView) return;
-        try {
-            orderFileView.setText(JSON.stringify(root.orderMap, null, 2));
-        } catch (e) {
-            console.log("[Wallpapers] Failed to save wallpaper_order.json:", e);
+    Connections {
+        target: Config.options.wallpaperSelector ?? null
+        function onSortModeChanged() {
+            if (Config.options.wallpaperSelector?.sortMode && root.sortMode !== Config.options.wallpaperSelector.sortMode) {
+                root.sortMode = Config.options.wallpaperSelector.sortMode;
+                debounceRebuildTimer.restart();
+            }
         }
+    }
+
+    Connections {
+        target: Config
+        function onReadyChanged() {
+            if (Config.ready) {
+                if (Config.options.wallpaperSelector?.sortMode) {
+                    root.sortMode = Config.options.wallpaperSelector.sortMode;
+                }
+                debounceRebuildTimer.restart();
+            }
+        }
+    }
+
+    function saveCustomOrder() {
+        const jsonStr = JSON.stringify(root.orderMap, null, 2);
+        if (orderFileView) {
+            try {
+                orderFileView.setText(jsonStr);
+            } catch (e) {
+                console.log("[Wallpapers] Failed to save wallpaper_order.json:", e);
+            }
+        }
+        const filePath = `${Directories.shellConfig}/wallpaper_order.json`;
+        Quickshell.execDetached(["bash", "-c", `mkdir -p '${Directories.shellConfig}' && cat << 'EOF' > '${filePath}.tmp' && mv '${filePath}.tmp' '${filePath}'\n${jsonStr}\nEOF`]);
     }
 
     function moveWallpaper(fromIndex, toIndex) {
@@ -226,6 +261,7 @@ Singleton {
         if (Config.options.wallpaperSelector) {
             Config.options.wallpaperSelector.sortMode = "custom";
         }
+        Config.setNestedValue("wallpaperSelector.sortMode", "custom");
 
         const list = [];
         const paths = [];
@@ -234,7 +270,8 @@ Singleton {
             list.push(it.fileName);
             if (it.filePath) paths.push(it.filePath);
         }
-        root.orderMap[root.effectiveDirectory] = list;
+        const cleanDir = getCleanDirPath(folderModel.folder);
+        root.orderMap[cleanDir] = list;
         root.wallpapers = paths;
         root.saveCustomOrder();
     }
@@ -252,6 +289,7 @@ Singleton {
         if (Config.options.wallpaperSelector) {
             Config.options.wallpaperSelector.sortMode = mode;
         }
+        Config.setNestedValue("wallpaperSelector.sortMode", mode);
         rebuildWallpaperModel();
     }
 
@@ -274,21 +312,23 @@ Singleton {
             for (let i = 0; i < customList.length; i++) {
                 orderLookup[customList[i]] = i;
             }
-            const ordered = [];
-            const remaining = [];
+            const dirs = [];
+            const orderedFiles = [];
+            const remainingFiles = [];
             for (let i = 0; i < items.length; i++) {
                 const it = items[i];
-                if (typeof orderLookup[it.fileName] !== "undefined") {
-                    ordered.push(it);
+                if (it.fileIsDir) {
+                    dirs.push(it);
+                } else if (typeof orderLookup[it.fileName] !== "undefined") {
+                    orderedFiles.push(it);
                 } else {
-                    remaining.push(it);
+                    remainingFiles.push(it);
                 }
             }
-            ordered.sort((a, b) => orderLookup[a.fileName] - orderLookup[b.fileName]);
-            return remaining.concat(ordered).sort((a, b) => {
-                if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
-                return 0;
-            });
+            dirs.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true, sensitivity: "base" }));
+            orderedFiles.sort((a, b) => orderLookup[a.fileName] - orderLookup[b.fileName]);
+            remainingFiles.sort((a, b) => new Date(b.fileModified) - new Date(a.fileModified));
+            return dirs.concat(orderedFiles, remainingFiles);
         } else if (mode === "name") {
             return items.slice().sort((a, b) => {
                 if (a.fileIsDir !== b.fileIsDir) return a.fileIsDir ? -1 : 1;
@@ -350,8 +390,10 @@ Singleton {
             });
         }
 
-        const savedOrder = root.orderMap[root.effectiveDirectory] || [];
-        const sorted = sortItems(items, root.sortMode, savedOrder);
+        const cleanDir = getCleanDirPath(folderModel.folder);
+        const savedOrder = root.orderMap[cleanDir] || root.orderMap[cleanDir + "/"] || [];
+        const effectiveMode = (root.sortMode === "custom" || (!root.sortMode && savedOrder.length > 0)) ? "custom" : root.sortMode;
+        const sorted = sortItems(items, effectiveMode, savedOrder);
 
         wallpaperModel.clear();
         const paths = [];
