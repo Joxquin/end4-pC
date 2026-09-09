@@ -1,10 +1,16 @@
+pragma ComponentBehavior: Bound
+
 import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.common.functions
+import Quickshell.Services.Mpris
+import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell.Io
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Hyprland
@@ -17,6 +23,7 @@ import qs.modules.ii.sidebarRight.nightLight
 import qs.modules.ii.sidebarRight.volumeMixer
 import qs.modules.ii.sidebarRight.wifiNetworks
 import qs.modules.ii.sidebarRight.calendar
+import qs.modules.ii.sidebarRight.iconPicker
 
 Item {
     id: root
@@ -31,16 +38,69 @@ Item {
     property bool showCalendarDateDialog: false
     property var selectedCalendarDate: new Date()
     property bool editMode: false
+    property bool showIconPickerDialog: false
+
+    readonly property bool animatedEntrance: WM.compositor !== "hyprland"
+    readonly property bool sidebarOpen: GlobalStates.sidebarRightOpen
+
+    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+
+    property bool isSyncing: false
+
+    function triggerGoogleSync() {
+        root.isSyncing = true;
+        GoogleService.sync();
+        syncCooldownTimer.restart();
+    }
+
+    Timer {
+        id: syncCooldownTimer
+        interval: 2000
+        onTriggered: root.isSyncing = false
+    }
 
     Connections {
         target: GlobalStates
+        function onRequestBluetoothDialog() {
+            if (!BluetoothStatus.available) return;
+            root.showBluetoothDialog = true;
+            GlobalStates.sidebarRightOpen = true;
+        }
+
         function onSidebarRightOpenChanged() {
-            if (!GlobalStates.sidebarRightOpen) {
+            if (GlobalStates.sidebarRightOpen) {
+                root.triggerGoogleSync();
+            } else {
                 root.showWifiDialog = false;
                 root.showBluetoothDialog = false;
                 root.showAudioOutputDialog = false;
                 root.showAudioInputDialog = false;
                 root.showCalendarDateDialog = false;
+                root.showIconPickerDialog = false;
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (GlobalStates.sidebarRightOpen) {
+            root.triggerGoogleSync();
+        }
+    }
+
+    Process {
+        id: fileChooser
+        command: ["kdialog", "--getopenfilename", Quickshell.env("HOME") + "/Pictures", "image/png image/jpg image/jpeg image/webp"]
+
+        stdout: StdioCollector {
+            id: fileChooserOutput
+        }
+
+        onExited: (code) => {
+            if (code === 0) {
+                const path = fileChooserOutput.text.trim();
+                if (path !== "") {
+                    Config.options.sidebar.bannerImage = path;
+                }
             }
         }
     }
@@ -67,12 +127,246 @@ Item {
             anchors.margins: sidebarPadding
             spacing: sidebarPadding
 
-            SystemButtonRow {
-                Layout.fillHeight: false
+            // Banner
+            Loader {
                 Layout.fillWidth: true
-                // Layout.margins: 10
-                Layout.topMargin: 5
-                Layout.bottomMargin: 0
+                Layout.fillHeight: false
+                sourceComponent: Config.options.sidebar.banner ? bannerComponent : normalComponent
+
+                Component {
+                    id: bannerComponent
+                    Item {
+                        implicitHeight: 180
+                        implicitWidth: parent?.width ?? 0
+
+                        Rectangle {
+                            id: sysRect
+                            anchors.fill: parent
+                            radius: Config.options.hyprland.decoration.rounding - 2
+                            color: Appearance.colors.colLayer1
+
+                            Rectangle {
+                                id: wallpaperRect
+                                anchors {
+                                    top: parent.top
+                                    left: parent.left
+                                    right: parent.right
+                                    topMargin: 2
+                                    leftMargin: 2
+                                    rightMargin: 2
+                                }
+                                height: 120
+                                radius: sysRect.radius
+                                color: "transparent"
+
+                                StyledImage {
+                                    anchors.fill: parent
+                                    fillMode: Image.PreserveAspectCrop
+                                    source: Config.options.sidebar.bannerImage !== ""
+                                        ? Config.options.sidebar.bannerImage
+                                        : Config.options.background.wallpaperPath
+                                    cache: false
+                                    antialiasing: true
+                                    sourceSize.width: wallpaperRect.width * 2
+                                    sourceSize.height: wallpaperRect.height * 2
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: wallpaperRect.width
+                                            height: wallpaperRect.height
+                                            radius: wallpaperRect.radius
+                                        }
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    onClicked: (event) => {
+                                        if (event.button === Qt.LeftButton) {
+                                            fileChooser.running = true;
+                                            GlobalStates.sidebarRightOpen = false;
+                                        } else if (event.button === Qt.RightButton) {
+                                            Config.options.sidebar.bannerImage = "";
+                                        }
+                                    }
+                                }
+                            }
+
+                            Column {
+                                anchors {
+                                    left: parent.left
+                                    bottom: parent.bottom
+                                    leftMargin: 13
+                                    bottomMargin: 8
+                                }
+                                spacing: 1
+
+                                Rectangle {
+                                    id: avatarRect
+                                    width: 48
+                                    height: 48
+                                    radius: width / 2
+                                    color: Appearance.colors.colPrimaryContainer
+
+                                    Image {
+                                        id: avatarImage
+                                        anchors.fill: parent
+                                        source: Config.options.profile.avatarPath !== ""
+                                            ? "file://" + Config.options.profile.avatarPicture
+                                            : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
+                                        sourceSize.width: avatarImage.width * 2
+                                        sourceSize.height: avatarImage.height * 2
+                                        fillMode: Image.PreserveAspectCrop
+                                        layer.enabled: true
+                                        layer.effect: OpacityMask {
+                                            maskSource: Rectangle {
+                                                width: avatarRect.width
+                                                height: avatarRect.height
+                                                radius: avatarRect.radius
+                                            }
+                                        }
+                                        onStatusChanged: {
+                                            if (status === Image.Error) visible = false;
+                                        }
+                                    }
+
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "account_circle"
+                                        iconSize: 32
+                                        color: Appearance.colors.colOnPrimaryContainer
+                                        visible: avatarImage.status === Image.Error
+                                    }
+
+                                    Rectangle {
+                                        id: avatarSyncOverlay
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 0.7)
+                                        visible: opacity > 0
+                                        opacity: (root.isSyncing || avatarMouseArea.containsMouse) ? 1 : 0
+
+                                        Behavior on opacity {
+                                            NumberAnimation { duration: 200 }
+                                        }
+
+                                        Item {
+                                            id: avatarSyncWrapper
+                                            anchors.centerIn: parent
+                                            width: 24
+                                            height: 24
+
+                                            MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                iconSize: 24
+                                                text: "sync"
+                                                color: Appearance.colors.colPrimary
+                                            }
+
+                                            RotationAnimation {
+                                                target: avatarSyncWrapper
+                                                from: 0
+                                                to: 360
+                                                duration: 1000
+                                                loops: root.isSyncing ? Animation.Infinite : 1
+                                                running: root.isSyncing
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: avatarMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.triggerGoogleSync()
+                                    }
+
+                                    StyledToolTip {
+                                        extraVisibleCondition: avatarMouseArea.containsMouse
+                                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
+                                    }
+                                }
+
+                                StyledText {
+                                    text: (Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName) + "@" + SystemInfo.hostname
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                    font.weight: Font.DemiBold
+                                    color: Appearance.colors.colOnLayer1
+                                }
+
+                                StyledText {
+                                    text: Translation.tr("Up • %1").arg(DateTime.uptime)
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: Appearance.colors.colOnLayer1
+                                    opacity: 0.6
+                                }
+                            }
+
+                            ButtonGroup {
+                                anchors {
+                                    right: parent.right
+                                    bottom: parent.bottom
+                                    margins: 4
+                                }
+                                color: "transparent"
+                                padding: 4
+
+                                QuickToggleButton {
+                                    toggled: root.editMode
+                                    visible: Config.options.sidebar.quickToggles.style === "android"
+                                    buttonIcon: "edit"
+                                    onClicked: root.editMode = !root.editMode
+                                    StyledToolTip {
+                                        text: Translation.tr("Edit quick toggles") + (root.editMode ? Translation.tr("\nLMB to enable/disable\nRMB to toggle size\nScroll to swap position") : "")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: false
+                                    buttonIcon: "restart_alt"
+                                    onClicked: {
+                                        if (WM.compositor === "niri") {
+                                            Quickshell.execDetached(["niri", "msg", "action", "reload-config"]);
+                                        } else {
+                                            Quickshell.execDetached(["hyprctl", "reload"]);
+                                        }
+                                        Quickshell.reload(true);
+                                    }
+                                    StyledToolTip {
+                                        text: WM.compositor === "niri"
+                                            ? Translation.tr("Reload Niri & Quickshell")
+                                            : Translation.tr("Reload Hyprland & Quickshell")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: GlobalStates.settingsOpen
+                                    buttonIcon: "settings"
+                                    onClicked: {
+                                        GlobalStates.sidebarRightOpen = false;
+                                        GlobalStates.settingsOpen = !GlobalStates.settingsOpen;
+                                    }
+                                    StyledToolTip {
+                                        text: Translation.tr("Settings")
+                                    }
+                                }
+                                QuickToggleButton {
+                                    toggled: false
+                                    buttonIcon: "power_settings_new"
+                                    onClicked: GlobalStates.sessionOpen = true
+                                    StyledToolTip {
+                                        text: Translation.tr("Session")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: normalComponent
+                    SystemButtonRow {}
+                }
             }
 
             Loader {
@@ -80,8 +374,8 @@ Item {
                 Layout.fillWidth: true
                 visible: active
                 active: {
-                    const configQuickSliders = Config.options.sidebar.quickSliders
-                    if (!configQuickSliders.enable) return false
+                    const configQuickSliders = Config.options.sidebar.quickSliders;
+                    if (!configQuickSliders.enable) return false;
                     if (!configQuickSliders.showMic && !configQuickSliders.showVolume && !configQuickSliders.showBrightness) return false;
                     return true;
                 }
@@ -100,20 +394,41 @@ Item {
                 }
             }
 
+            Loader {
+                active: root.activePlayer !== null && GlobalStates.sidebarRightOpen && Config.options.sidebar.mediaPlayer
+                visible: active
+                Layout.fillWidth: true
+                Layout.topMargin: -10
+                Layout.bottomMargin: -10
+                Layout.leftMargin: -10
+                Layout.rightMargin: -10
+                sourceComponent: Player {
+                    player: root.activePlayer
+                    visualizerPoints: GlobalStates.visualizerPoints
+                    implicitHeight: 160
+                    radius: Appearance.rounding.normal
+                }
+            }
+
             CenterWidgetGroup {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: true
                 Layout.fillWidth: true
             }
 
-            BottomWidgetGroup {
+            Loader {
+                id: bottomWidgetGroupLoader
+                active: Config.options.sidebar.bottomGroup
+                visible: active
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
                 Layout.fillWidth: true
-                Layout.preferredHeight: implicitHeight
-                onDateSelected: (date) => {
-                    root.selectedCalendarDate = date;
-                    root.showCalendarDateDialog = true;
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                sourceComponent: BottomWidgetGroup {
+                    onDateSelected: (date) => {
+                        root.selectedCalendarDate = date;
+                        root.showCalendarDateDialog = true;
+                    }
                 }
             }
         }
@@ -144,11 +459,13 @@ Item {
         shownPropertyString: "showBluetoothDialog"
         dialog: BluetoothDialog {}
         onShownChanged: {
+            const adapter = Bluetooth.defaultAdapter;
+            if (!adapter) return;
             if (!shown) {
-                Bluetooth.defaultAdapter.discovering = false;
+                adapter.discovering = false;
             } else {
-                Bluetooth.defaultAdapter.enabled = true;
-                Bluetooth.defaultAdapter.discovering = true;
+                adapter.enabled = true;
+                adapter.discovering = true;
             }
         }
     }
@@ -166,6 +483,11 @@ Item {
             Network.enableWifi();
             Network.rescanWifi();
         }
+    }
+
+    ToggleDialog {
+        shownPropertyString: "showIconPickerDialog"
+        dialog: IconPickerDialog {}
     }
 
     component ToggleDialog: Loader {
@@ -186,11 +508,12 @@ Item {
         Connections {
             target: toggleDialogLoader.item
             function onDismiss() {
-                toggleDialogLoader.item.show = false
+                toggleDialogLoader.item.show = false;
                 root[toggleDialogLoader.shownPropertyString] = false;
             }
             function onVisibleChanged() {
-                if (!toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString]) toggleDialogLoader.active = false;
+                if (toggleDialogLoader.item && !toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString])
+                    toggleDialogLoader.active = false;
             }
         }
     }
@@ -232,51 +555,13 @@ Item {
                 bottom: parent.bottom
                 left: parent.left
             }
-            color: uptimeMouseArea.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
+            color: upMouseArea.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
             radius: height / 2
             implicitWidth: uptimeRow.implicitWidth + 24
             implicitHeight: uptimeRow.implicitHeight + 8
 
             Behavior on color {
                 ColorAnimation { duration: 150 }
-            }
-
-            property bool isSyncing: false
-
-            function triggerSync() {
-                isSyncing = true;
-                syncRotateAnim.restart();
-                GoogleService.sync();
-                syncCooldownTimer.restart();
-            }
-
-            Timer {
-                id: syncCooldownTimer
-                interval: 2000
-                onTriggered: uptimeContainer.isSyncing = false
-            }
-
-            Connections {
-                target: GlobalStates
-                function onSidebarRightOpenChanged() {
-                    if (GlobalStates.sidebarRightOpen) {
-                        uptimeContainer.triggerSync();
-                    }
-                }
-            }
-
-            Component.onCompleted: {
-                if (GlobalStates.sidebarRightOpen) {
-                    uptimeContainer.triggerSync();
-                }
-            }
-
-            MouseArea {
-                id: uptimeMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: uptimeContainer.triggerSync()
             }
 
             Row {
@@ -290,60 +575,95 @@ Item {
                     width: 25
                     height: 25
 
-                    Item {
-                        id: syncIconWrapper
-                        anchors.fill: parent
-                        visible: opacity > 0
-                        opacity: (uptimeContainer.isSyncing || uptimeMouseArea.containsMouse) ? 1 : 0
-
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200 }
-                        }
-
-                        MaterialSymbol {
-                            anchors.centerIn: parent
-                            iconSize: 22
-                            text: "sync"
-                            color: Appearance.colors.colPrimary
-                        }
-
-                        RotationAnimation {
-                            id: syncRotateAnim
-                            target: syncIconWrapper
-                            from: 0
-                            to: 360
-                            duration: 1000
-                            loops: uptimeContainer.isSyncing ? Animation.Infinite : 1
-                            running: uptimeContainer.isSyncing
-                        }
-                    }
-
                     CustomIcon {
                         id: distroIcon
                         anchors.fill: parent
-                        source: SystemInfo.distroIcon
-                        colorize: true
+                        source: Config.options.custom.distroIcon || SystemInfo.distroIcon
+                        colorize: Config.options.custom.colorizeIcon
                         color: Appearance.colors.colOnLayer0
-                        visible: opacity > 0
-                        opacity: (uptimeContainer.isSyncing || uptimeMouseArea.containsMouse) ? 0 : 1
+                    }
 
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200 }
-                        }
+                    MouseArea {
+                        id: distroMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.showIconPickerDialog = true
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: distroMouseArea.containsMouse
+                        text: Translation.tr("Change distro icon")
                     }
                 }
 
-                StyledText {
+                Item {
+                    id: upSyncItem
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer0
-                    text: Translation.tr("Up %1").arg(DateTime.uptime)
-                    textFormat: Text.MarkdownText
-                }
-            }
+                    implicitWidth: upRowContent.implicitWidth
+                    implicitHeight: upRowContent.implicitHeight
 
-            StyledToolTip {
-                text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
+                    Row {
+                        id: upRowContent
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Item {
+                            id: syncIconWrapper
+                            width: 18
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: opacity > 0
+                            opacity: (root.isSyncing || upMouseArea.containsMouse) ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation { duration: 200 }
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                iconSize: 18
+                                text: "sync"
+                                color: Appearance.colors.colPrimary
+                            }
+
+                            RotationAnimation {
+                                id: syncRotateAnim
+                                target: syncIconWrapper
+                                from: 0
+                                to: 360
+                                duration: 1000
+                                loops: root.isSyncing ? Animation.Infinite : 1
+                                running: root.isSyncing
+                            }
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.pixelSize: Appearance.font.pixelSize.normal
+                            color: upMouseArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
+                            text: Translation.tr("Up • %1").arg(DateTime.uptime)
+                            textFormat: Text.MarkdownText
+
+                            Behavior on color {
+                                ColorAnimation { duration: 150 }
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: upMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.triggerGoogleSync()
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: upMouseArea.containsMouse
+                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
+                    }
+                }
             }
         }
 
@@ -370,11 +690,17 @@ Item {
                 toggled: false
                 buttonIcon: "restart_alt"
                 onClicked: {
-                    Quickshell.execDetached(["hyprctl", "reload"])
+                    if (WM.compositor === "niri") {
+                        Quickshell.execDetached(["niri", "msg", "action", "reload-config"]);
+                    } else {
+                        Quickshell.execDetached(["hyprctl", "reload"]);
+                    }
                     Quickshell.reload(true);
                 }
                 StyledToolTip {
-                    text: Translation.tr("Reload Hyprland & Quickshell")
+                    text: WM.compositor === "niri"
+                        ? Translation.tr("Reload Niri & Quickshell")
+                        : Translation.tr("Reload Hyprland & Quickshell")
                 }
             }
             QuickToggleButton {

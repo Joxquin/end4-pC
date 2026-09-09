@@ -154,6 +154,7 @@ Singleton {
                 property string avatarPicture: ""
                 property string descriptionText: "::distro::"
                 property string displayName: ""
+                property bool onlinePresets: false
 
             }
 
@@ -223,8 +224,13 @@ Singleton {
                 property string lockWall: ""
                 property bool widgetsLocked: false
                 property bool showGrid: true
+                property bool showBlur: false
+                property string splitRatio: "100" // 25 50 100
+                property string splitSide: "left"
                 property bool showSnapLines: true
                 property JsonObject widgets: JsonObject {
+                    property bool blurWidgets: false
+                    property real blurRadius: 32
                     property JsonObject clock: JsonObject {
                         property bool enable: true
                         property bool showOnlyWhenLocked: false
@@ -276,6 +282,7 @@ Singleton {
                         property real x: 400
                         property real y: 100
                         property string sizeMode: "1x3"
+                        property bool expanded: false
                     }
 
                     property JsonObject calendar: JsonObject {
@@ -291,10 +298,18 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
-                        property string sizeMode: "2x2" 
+                        property string sizeMode: "2x2"
+                        property int clockCount: 4 
                     }
 
                     property JsonObject notes: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                    }
+
+                    property JsonObject todo: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 400
@@ -306,7 +321,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
-                        property string sizeMode: "2x2" 
+                        property string sizeMode: "1x2" 
                     }
 
                     property JsonObject images: JsonObject {
@@ -334,6 +349,14 @@ Singleton {
                     }
 
                     property JsonObject resources: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property bool vertical: false
+                    }
+
+                    property JsonObject timers: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 400
@@ -672,6 +695,7 @@ Singleton {
 
             property JsonObject sidebar: JsonObject {
                 property bool banner: true
+                property bool bottomGroup: true
                 property bool mediaPlayer: false
                 property string bannerImage: ""
                 property bool keepRightSidebarLoaded: false
@@ -682,6 +706,10 @@ Singleton {
                 property JsonObject media: JsonObject {
                     property bool enable: true
                     property bool artColors: false
+                    property string artShape: "Oval"
+                    property bool showLyrics: true
+                    property bool shapeArt: false
+                    property bool blurredBackground: false
                 }
                 
                 property JsonObject ai: JsonObject {
@@ -791,6 +819,7 @@ Singleton {
                 property int columns: 4
                 property bool closeAfterSelection: true
                 property int changeInterval: 0 
+                property string sortMode: "time"
             }
 
             property JsonObject windows: JsonObject {
