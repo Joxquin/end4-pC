@@ -178,7 +178,7 @@ Variants {
         }
 
         Component.onCompleted: {
-            previousWallpaper.source = ""
+            previousWallpaper.source = bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
             wallpaper.source = bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
             bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
             bgRoot.previousWallpaperSource = ""
@@ -203,6 +203,7 @@ Variants {
             }
             if (bgRoot.wallpaperAnimation === "") {
                 wallpaper.source = wallpaperPath
+                previousWallpaper.source = wallpaperPath
                 bgRoot.currentWallpaperSource = wallpaperPath
                 if (!bgRoot.wallpaperIsVideo) return
                 bgRoot.videoRevealed = true
@@ -218,6 +219,9 @@ Variants {
                 bgRoot.currentShader = bgRoot.wallpaperAnimation
             }
             bgRoot.transitionProgress = 0.0
+            if (wallpaper.status === Image.Ready) {
+                transitionAnim.restart()
+            }
         }
 
         NumberAnimation {
@@ -229,7 +233,7 @@ Variants {
             duration: 1200
             easing.type: Easing.InOutCubic
             onFinished: {
-                previousWallpaper.source = ""
+                previousWallpaper.source = bgRoot.currentWallpaperSource
                 bgRoot.previousWallpaperSource = ""
                 bgRoot.transitionProgress = 1.0
                 bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
@@ -365,8 +369,9 @@ Variants {
                 mipmap: true
                 smooth: true
                 asynchronous: true
-                layer.enabled: bgRoot.transitionProgress < 1.0
-                visible: false
+                layer.enabled: true
+                visible: true
+                opacity: 0
             }
 
             StyledImage {
@@ -382,9 +387,10 @@ Variants {
                 smooth: true
                 mipmap: true
                 asynchronous: true
-                layer.enabled: bgRoot.transitionProgress < 1.0 || blurLoader.active
+                layer.enabled: true
                 visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
-                    && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
+                opacity: (bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0) ? 0 : 1
+                Behavior on opacity { enabled: false }
                 Behavior on x {
                     NumberAnimation {
                         duration: 600
@@ -685,6 +691,7 @@ Variants {
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
                     sourceComponent: VisualizerWidget {
+                        showSelectionBorder: false
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width
@@ -702,6 +709,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -714,6 +722,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -726,6 +735,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -740,6 +750,7 @@ Variants {
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -752,6 +763,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -766,6 +778,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
@@ -786,6 +799,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -798,6 +812,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -810,6 +825,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -822,6 +838,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -834,6 +851,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -846,6 +864,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
             }
