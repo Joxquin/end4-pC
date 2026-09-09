@@ -63,11 +63,10 @@ Scope {
             }
 
             anchors {
-                horizontalCenter: parent.horizontalCenter
-                top: parent.top
-                topMargin: panelWindow.barOverlapActive
-                    ? Appearance.sizes.barHeight - Config.options.bar.frameThickness
-                    : 0
+                top: true
+                bottom: true
+                left: true
+                right: true
             }
 
             Component.onCompleted: {
@@ -103,6 +102,9 @@ Scope {
                 anchors {
                     horizontalCenter: parent.horizontalCenter
                     top: parent.top
+                    topMargin: panelWindow.barOverlapActive
+                        ? Appearance.sizes.barHeight - Config.options.bar.frameThickness
+                        : 0
                 }
                 spacing: -8
 
