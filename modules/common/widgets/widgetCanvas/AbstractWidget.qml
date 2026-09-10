@@ -65,10 +65,7 @@ MouseArea {
 
     function commitPosition() {}
 
-    Component.onCompleted: {
-        var canvas = findCanvas(root.parent)
-        if (canvas) canvas.registerWidget(root)
-    }
+    Component.onCompleted: { var canvas = findCanvas(root.parent); if (canvas) canvas.registerWidget(root) }
 
     Component.onDestruction: {
         var canvas = findCanvas(root.parent)
