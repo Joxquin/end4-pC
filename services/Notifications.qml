@@ -268,29 +268,37 @@ Singleton {
         id: notifFileView
         path: Qt.resolvedUrl(filePath)
         onLoaded: {
-            const fileContents = notifFileView.text()
-            root.list = JSON.parse(fileContents).map((notif) => {
-                return notifComponent.createObject(root, {
-                    "notificationId": notif.notificationId,
-                    "actions": [], // Notification actions are meaningless if they're not tracked by the server or the sender is dead
-                    "appIcon": notif.appIcon,
-                    "appName": notif.appName,
-                    "body": notif.body,
-                    "image": notif.image,
-                    "summary": notif.summary,
-                    "time": notif.time,
-                    "urgency": notif.urgency,
+            try {
+                const fileContents = notifFileView.text()
+                root.list = JSON.parse(fileContents).map((notif) => {
+                    return notifComponent.createObject(root, {
+                        "notificationId": notif.notificationId,
+                        "actions": [], // Notification actions are meaningless if they're not tracked by the server or the sender is dead
+                        "appIcon": notif.appIcon,
+                        "appName": notif.appName,
+                        "body": notif.body,
+                        "image": notif.image,
+                        "summary": notif.summary,
+                        "time": notif.time,
+                        "urgency": notif.urgency,
+                    });
                 });
-            });
-            // Find largest notificationId
-            let maxId = 0
-            root.list.forEach((notif) => {
-                maxId = Math.max(maxId, notif.notificationId)
-            })
+                // Find largest notificationId
+                let maxId = 0
+                root.list.forEach((notif) => {
+                    maxId = Math.max(maxId, notif.notificationId)
+                })
 
-            console.log("[Notifications] File loaded")
-            root.idOffset = maxId
-            root.initDone()
+                console.log("[Notifications] File loaded")
+                root.idOffset = maxId
+                root.initDone()
+            } catch (e) {
+                console.error("[Notifications] Failed to parse notifications file, resetting:", e)
+                root.list = []
+                notifFileView.setText(stringifyList(root.list))
+                root.idOffset = 0
+                root.initDone()
+            }
         }
         onLoadFailed: (error) => {
             if(error == FileViewError.FileNotFound) {
