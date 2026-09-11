@@ -215,8 +215,8 @@ Variants {
                 mipmap: true
                 smooth: true
                 layer.enabled: true
-                visible: true
-                opacity: 1
+                visible: !bgRoot.videoRevealed
+                opacity: bgRoot.videoRevealed ? 0 : 1
             }
 
             StyledImage {
