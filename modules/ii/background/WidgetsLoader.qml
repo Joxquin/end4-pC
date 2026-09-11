@@ -104,6 +104,7 @@ Item {
             scaledScreenWidth: root.screen.width
             scaledScreenHeight: root.screen.height
             wallpaperScale: 1
+            pinnedBottom: true
         }
     }
     Component {

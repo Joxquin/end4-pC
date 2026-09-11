@@ -237,6 +237,7 @@ Singleton {
                         property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"
                         property real x: 100
                         property real y: 100
+                        property real z: 0
                         property string style: "cookie"        // Options: "cookie", "digital"
                         property string color: ""
                         property string styleLocked: "cookie"  // Options: "cookie", "digital"
@@ -281,6 +282,7 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property string sizeMode: "1x3"
                         property bool expanded: false
                     }
@@ -290,6 +292,7 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property string sizeMode: "2x2"
                     }
                     property JsonObject worldClock: JsonObject {
@@ -298,6 +301,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property string sizeMode: "2x2"
                         property int clockCount: 4 
                     }
@@ -307,6 +311,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                     }
 
                     property JsonObject todo: JsonObject {
@@ -314,6 +319,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                     }
 
                     property JsonObject userCard: JsonObject {
@@ -321,6 +327,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property string sizeMode: "1x2" 
                     }
 
@@ -329,6 +336,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                     }
 
                     property JsonObject visualizer: JsonObject {
@@ -336,6 +344,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 0
                         property real y: 0
+                        property real z: -1000
                     }
 
                     property JsonObject customImage: JsonObject {
@@ -343,6 +352,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property string path: ""
                         property string shape: "Cookie4Sided"
                         property real size: 200
@@ -353,6 +363,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property bool vertical: false
                     }
 
@@ -361,6 +372,7 @@ Singleton {
                         property string placementStrategy: "free"
                         property real x: 400
                         property real y: 100
+                        property real z: 0
                         property bool vertical: false
                     }
 
@@ -373,6 +385,7 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 800
                         property real y: 500
+                        property real z: 0
                         property string sizeMode: "1x3" 
                     }
                 }

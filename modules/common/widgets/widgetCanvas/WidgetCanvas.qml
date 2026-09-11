@@ -41,6 +41,15 @@ MouseArea {
         root.registeredWidgets = root.registeredWidgets.filter(w => w !== widget)
     }
 
+    function bringToFront(widget) {
+        if (widget.pinnedBottom) return
+        let maxZ = 0
+        for (const w of root.registeredWidgets) {
+            if (w !== widget && !w.pinnedBottom && w.z > maxZ) maxZ = w.z
+        }
+        widget.z = maxZ + 1
+    }
+
     function clearSelection() {
         for (const widget of root.registeredWidgets) widget.selected = false
     }
@@ -113,34 +122,24 @@ MouseArea {
     }
 
     Repeater {
-        id: crossRepeater
-        readonly property int cols: Math.ceil(root.width / root.gridSize) + 1
-        readonly property int rows: Math.ceil(root.height / root.gridSize) + 1
-        model: root.gridVisible ? cols * rows : 0
-        delegate: Item {
-            id: crossPoint
+        model: root.gridVisible ? Math.ceil(root.width / root.gridSize) : 0
+        delegate: Rectangle {
             required property int index
-            readonly property int col: index % crossRepeater.cols
-            readonly property int row: Math.floor(index / crossRepeater.cols)
-            readonly property int crossSize: 5
+            x: index * root.gridSize
+            width: 1
+            height: root.height
+            color: Appearance.colors.colLayer0Border
+        }
+    }
 
-            x: col * root.gridSize - crossSize / 2
-            y: row * root.gridSize - crossSize / 2
-            width: crossSize
-            height: crossSize
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: crossPoint.crossSize
-                height: 1
-                color: Appearance.colors.colLayer0Border
-            }
-            Rectangle {
-                anchors.centerIn: parent
-                width: 1
-                height: crossPoint.crossSize
-                color: Appearance.colors.colLayer0Border
-            }
+    Repeater {
+        model: root.gridVisible ? Math.ceil(root.height / root.gridSize) : 0
+        delegate: Rectangle {
+            required property int index
+            y: index * root.gridSize
+            width: root.width
+            height: 1
+            color: Appearance.colors.colLayer0Border
         }
     }
 
