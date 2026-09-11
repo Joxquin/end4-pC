@@ -244,7 +244,11 @@ Singleton {
             const notifServerNotif = notifServer.trackedNotifications.values[notifServerIndex];
             const action = notifServerNotif.actions.find((action) => action.identifier === notifIdentifier);
             // console.log("Action found: " + JSON.stringify(action));
-            action.invoke()
+            if (action) {
+                action.invoke();
+            } else {
+                console.warn("[Notifications] Action not found:", notifIdentifier);
+            }
         } 
         else {
             console.log("Notification not found in server: " + id)
