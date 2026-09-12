@@ -74,7 +74,7 @@ ContentPage {
         id: mainLayout
         Layout.fillWidth: true
         Layout.fillHeight: true
-        spacing: 10
+        spacing: 6
 
         ContentSection {
             icon: "screenshot_monitor"
