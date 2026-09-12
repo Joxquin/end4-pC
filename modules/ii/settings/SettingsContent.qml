@@ -130,7 +130,7 @@ Item {
                         RowLayout {
                             id: profileRow
                             anchors.fill: parent
-                            spacing: 10
+                            spacing: -16
 
                             Rectangle {
                                 id: avatarRect
