@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import qs
 import qs.services
 import qs.modules.common
@@ -15,21 +17,26 @@ import Quickshell.Hyprland
 
 import qs.modules.ii.sidebarRight.quickToggles
 import qs.modules.ii.sidebarRight.quickToggles.classicStyle
+
 import qs.modules.ii.sidebarRight.bluetoothDevices
 import qs.modules.ii.sidebarRight.nightLight
 import qs.modules.ii.sidebarRight.volumeMixer
 import qs.modules.ii.sidebarRight.wifiNetworks
+import qs.modules.ii.sidebarRight.calendar
 import qs.modules.ii.sidebarRight.iconPicker
 
 Item {
     id: root
     property int sidebarWidth: Appearance.sizes.sidebarWidth
     property int sidebarPadding: 10
+    property string settingsQmlPath: Quickshell.shellPath("settings.qml")
     property bool showAudioOutputDialog: false
     property bool showAudioInputDialog: false
     property bool showBluetoothDialog: false
     property bool showNightLightDialog: false
     property bool showWifiDialog: false
+    property bool showCalendarDateDialog: false
+    property var selectedCalendarDate: new Date()
     property bool editMode: false
     property bool showIconPickerDialog: false
 
@@ -37,46 +44,19 @@ Item {
     readonly property bool sidebarOpen: GlobalStates.sidebarRightOpen
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    readonly property var realPlayers: MprisController.players
-    readonly property var meaningfulPlayers: {
-        const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
-        if (preferred.length === 0) return filterDuplicatePlayers(realPlayers)
-        const filtered = realPlayers.filter(p =>
-            (p.identity ?? "").toLowerCase().includes(preferred) ||
-            (p.desktopEntry ?? "").toLowerCase().includes(preferred)
-        )
-        if (filtered.length === 0) return filterDuplicatePlayers(realPlayers)
-        return filterDuplicatePlayers(filtered)
+
+    property bool isSyncing: false
+
+    function triggerGoogleSync() {
+        root.isSyncing = true;
+        GoogleService.sync();
+        syncCooldownTimer.restart();
     }
 
-    function filterDuplicatePlayers(players) {
-        if (!players) return [];
-        let filtered = [];
-        let used = new Set();
-
-        for (let i = 0; i < players.length; ++i) {
-            if (used.has(i))
-                continue;
-            let p1 = players[i];
-            let group = [i];
-
-            // Find duplicates by trackTitle prefix
-            for (let j = i + 1; j < players.length; ++j) {
-                let p2 = players[j];
-                if (p1.trackTitle && p2.trackTitle && (p1.trackTitle.includes(p2.trackTitle) || p2.trackTitle.includes(p1.trackTitle)) || (p1.position - p2.position <= 2 && p1.length - p2.length <= 2)) {
-                    group.push(j);
-                }
-            }
-
-            // Pick the one with non-empty trackArtUrl, or fallback to the first
-            let chosenIdx = group.find(idx => players[idx]?.trackArtUrl && players[idx].trackArtUrl.length > 0);
-            if (chosenIdx === undefined)
-                chosenIdx = group[0];
-
-            filtered.push(players[chosenIdx]);
-            group.forEach(idx => used.add(idx));
-        }
-        return filtered;
+    Timer {
+        id: syncCooldownTimer
+        interval: 2000
+        onTriggered: root.isSyncing = false
     }
 
     Connections {
@@ -88,28 +68,38 @@ Item {
         }
 
         function onSidebarRightOpenChanged() {
-            if (!GlobalStates.sidebarRightOpen) {
+            if (GlobalStates.sidebarRightOpen) {
+                root.triggerGoogleSync();
+            } else {
                 root.showWifiDialog = false;
                 root.showBluetoothDialog = false;
                 root.showAudioOutputDialog = false;
                 root.showAudioInputDialog = false;
+                root.showCalendarDateDialog = false;
+                root.showIconPickerDialog = false;
             }
+        }
+    }
+
+    Component.onCompleted: {
+        if (GlobalStates.sidebarRightOpen) {
+            root.triggerGoogleSync();
         }
     }
 
     Process {
         id: fileChooser
         command: ["kdialog", "--getopenfilename", Quickshell.env("HOME") + "/Pictures", "image/png image/jpg image/jpeg image/webp"]
-        
+
         stdout: StdioCollector {
             id: fileChooserOutput
         }
-        
+
         onExited: (code) => {
             if (code === 0) {
-                const path = fileChooserOutput.text.trim()
+                const path = fileChooserOutput.text.trim();
                 if (path !== "") {
-                    Config.options.sidebar.bannerImage = path
+                    Config.options.sidebar.bannerImage = path;
                 }
             }
         }
@@ -129,8 +119,8 @@ Item {
         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
         color: Appearance.colors.colLayer0
         border.width: 1
-        border.color: ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8) 
-        radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
+        border.color: Appearance.colors.colLayer0Border
+        radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 
         ColumnLayout {
             anchors.fill: parent
@@ -172,8 +162,8 @@ Item {
                                 StyledImage {
                                     anchors.fill: parent
                                     fillMode: Image.PreserveAspectCrop
-                                    source: Config.options.sidebar.bannerImage !== "" 
-                                        ? Config.options.sidebar.bannerImage 
+                                    source: Config.options.sidebar.bannerImage !== ""
+                                        ? Config.options.sidebar.bannerImage
                                         : Config.options.background.wallpaperPath
                                     cache: false
                                     antialiasing: true
@@ -194,10 +184,10 @@ Item {
                                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                                     onClicked: (event) => {
                                         if (event.button === Qt.LeftButton) {
-                                            fileChooser.running = true
-                                            GlobalStates.sidebarRightOpen = false
+                                            fileChooser.running = true;
+                                            GlobalStates.sidebarRightOpen = false;
                                         } else if (event.button === Qt.RightButton) {
-                                            Config.options.sidebar.bannerImage = ""
+                                            Config.options.sidebar.bannerImage = "";
                                         }
                                     }
                                 }
@@ -214,14 +204,16 @@ Item {
 
                                 Rectangle {
                                     id: avatarRect
-                                    width: 48; height: 48; radius: width / 2
+                                    width: 48
+                                    height: 48
+                                    radius: width / 2
                                     color: Appearance.colors.colPrimaryContainer
 
                                     Image {
                                         id: avatarImage
                                         anchors.fill: parent
-                                        source: Config.options.profile.avatarPath !== "" 
-                                            ? "file://" + Config.options.profile.avatarPicture 
+                                        source: Config.options.profile.avatarPath !== ""
+                                            ? "file://" + Config.options.profile.avatarPicture
                                             : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
                                         sourceSize.width: avatarImage.width * 2
                                         sourceSize.height: avatarImage.height * 2
@@ -235,7 +227,7 @@ Item {
                                             }
                                         }
                                         onStatusChanged: {
-                                            if (status === Image.Error) visible = false
+                                            if (status === Image.Error) visible = false;
                                         }
                                     }
 
@@ -245,6 +237,55 @@ Item {
                                         iconSize: 32
                                         color: Appearance.colors.colOnPrimaryContainer
                                         visible: avatarImage.status === Image.Error
+                                    }
+
+                                    Rectangle {
+                                        id: avatarSyncOverlay
+                                        anchors.fill: parent
+                                        radius: width / 2
+                                        color: Qt.rgba(Appearance.colors.colLayer0.r, Appearance.colors.colLayer0.g, Appearance.colors.colLayer0.b, 0.7)
+                                        visible: opacity > 0
+                                        opacity: (root.isSyncing || avatarMouseArea.containsMouse) ? 1 : 0
+
+                                        Behavior on opacity {
+                                            NumberAnimation { duration: 200 }
+                                        }
+
+                                        Item {
+                                            id: avatarSyncWrapper
+                                            anchors.centerIn: parent
+                                            width: 24
+                                            height: 24
+
+                                            MaterialSymbol {
+                                                anchors.centerIn: parent
+                                                iconSize: 24
+                                                text: "sync"
+                                                color: Appearance.colors.colPrimary
+                                            }
+
+                                            RotationAnimation {
+                                                target: avatarSyncWrapper
+                                                from: 0
+                                                to: 360
+                                                duration: 1000
+                                                loops: root.isSyncing ? Animation.Infinite : 1
+                                                running: root.isSyncing
+                                            }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: avatarMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.triggerGoogleSync()
+                                    }
+
+                                    StyledToolTip {
+                                        extraVisibleCondition: avatarMouseArea.containsMouse
+                                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
                                     }
                                 }
 
@@ -285,11 +326,17 @@ Item {
                                     toggled: false
                                     buttonIcon: "restart_alt"
                                     onClicked: {
-                                        Quickshell.execDetached(["hyprctl", "reload"])
+                                        if (WM.compositor === "niri") {
+                                            Quickshell.execDetached(["niri", "msg", "action", "reload-config"]);
+                                        } else {
+                                            Quickshell.execDetached(["hyprctl", "reload"]);
+                                        }
                                         Quickshell.reload(true);
                                     }
                                     StyledToolTip {
-                                        text: Translation.tr("Reload Hyprland & Quickshell")
+                                        text: WM.compositor === "niri"
+                                            ? Translation.tr("Reload Niri & Quickshell")
+                                            : Translation.tr("Reload Hyprland & Quickshell")
                                     }
                                 }
                                 QuickToggleButton {
@@ -297,7 +344,7 @@ Item {
                                     buttonIcon: "settings"
                                     onClicked: {
                                         GlobalStates.sidebarRightOpen = false;
-                                        GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+                                        GlobalStates.settingsOpen = !GlobalStates.settingsOpen;
                                     }
                                     StyledToolTip {
                                         text: Translation.tr("Settings")
@@ -305,7 +352,7 @@ Item {
                                 }
                                 QuickToggleButton {
                                     toggled: false
-                                    buttonIcon: "mode_off_on"
+                                    buttonIcon: "power_settings_new"
                                     onClicked: GlobalStates.sessionOpen = true
                                     StyledToolTip {
                                         text: Translation.tr("Session")
@@ -322,6 +369,19 @@ Item {
                 }
             }
 
+            Loader {
+                id: slidersLoader
+                Layout.fillWidth: true
+                visible: active
+                active: {
+                    const configQuickSliders = Config.options.sidebar.quickSliders;
+                    if (!configQuickSliders.enable) return false;
+                    if (!configQuickSliders.showMic && !configQuickSliders.showVolume && !configQuickSliders.showBrightness) return false;
+                    return true;
+                }
+                sourceComponent: QuickSliders {}
+            }
+
             LoaderedQuickPanelImplementation {
                 styleName: "classic"
                 sourceComponent: ClassicQuickPanel {}
@@ -332,19 +392,6 @@ Item {
                 sourceComponent: AndroidQuickPanel {
                     editMode: root.editMode
                 }
-            }
-
-            Loader {
-                id: slidersLoader
-                Layout.fillWidth: true
-                visible: active
-                active: {
-                    const configQuickSliders = Config.options.sidebar.quickSliders
-                    if (!configQuickSliders.enable) return false
-                    if (!configQuickSliders.showMic && !configQuickSliders.showVolume && !configQuickSliders.showBrightness) return false;
-                    return true;
-                }
-                sourceComponent: QuickSliders {}
             }
 
             Loader {
@@ -369,13 +416,28 @@ Item {
                 Layout.fillWidth: true
             }
 
-            BottomWidgetGroup {
-                visible: Config.options.sidebar.bottomGroup
-                id: bottomWidgetGroup
+            Loader {
+                id: bottomWidgetGroupLoader
+                active: Config.options.sidebar.bottomGroup
+                visible: active
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
                 Layout.fillWidth: true
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                sourceComponent: BottomWidgetGroup {
+                    onDateSelected: (date) => {
+                        root.selectedCalendarDate = date;
+                        root.showCalendarDateDialog = true;
+                    }
+                }
             }
+        }
+    }
+
+    ToggleDialog {
+        shownPropertyString: "showCalendarDateDialog"
+        dialog: CalendarDateDialog {
+            selectedDate: root.selectedCalendarDate
         }
     }
 
@@ -446,7 +508,7 @@ Item {
         Connections {
             target: toggleDialogLoader.item
             function onDismiss() {
-                toggleDialogLoader.item.show = false
+                toggleDialogLoader.item.show = false;
                 root[toggleDialogLoader.shownPropertyString] = false;
             }
             function onVisibleChanged() {
@@ -465,11 +527,21 @@ Item {
         active: Config.options.sidebar.quickToggles.style === styleName
         Connections {
             target: quickPanelImplLoader.item
-            function onOpenAudioOutputDialog() { root.showAudioOutputDialog = true; }
-            function onOpenAudioInputDialog() { root.showAudioInputDialog = true; }
-            function onOpenBluetoothDialog() { root.showBluetoothDialog = true; }
-            function onOpenNightLightDialog() { root.showNightLightDialog = true; }
-            function onOpenWifiDialog() { root.showWifiDialog = true; }
+            function onOpenAudioOutputDialog() {
+                root.showAudioOutputDialog = true;
+            }
+            function onOpenAudioInputDialog() {
+                root.showAudioInputDialog = true;
+            }
+            function onOpenBluetoothDialog() {
+                root.showBluetoothDialog = true;
+            }
+            function onOpenNightLightDialog() {
+                root.showNightLightDialog = true;
+            }
+            function onOpenWifiDialog() {
+                root.showWifiDialog = true;
+            }
         }
     }
 
@@ -483,16 +555,22 @@ Item {
                 bottom: parent.bottom
                 left: parent.left
             }
-            color: Appearance.colors.colLayer1
-            radius: Appearance.rounding.normal
+            color: upMouseArea.containsMouse ? Appearance.colors.colLayer2 : Appearance.colors.colLayer1
+            radius: height / 2
             implicitWidth: uptimeRow.implicitWidth + 24
             implicitHeight: uptimeRow.implicitHeight + 8
+
+            Behavior on color {
+                ColorAnimation { duration: 150 }
+            }
 
             Row {
                 id: uptimeRow
                 anchors.centerIn: parent
                 spacing: 8
+
                 Item {
+                    id: iconContainer
                     anchors.verticalCenter: parent.verticalCenter
                     width: 25
                     height: 25
@@ -506,17 +584,85 @@ Item {
                     }
 
                     MouseArea {
+                        id: distroMouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.showIconPickerDialog = true
                     }
+
+                    StyledToolTip {
+                        extraVisibleCondition: distroMouseArea.containsMouse
+                        text: Translation.tr("Change distro icon")
+                    }
                 }
-                StyledText {
+
+                Item {
+                    id: upSyncItem
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    color: Appearance.colors.colOnLayer0
-                    text: Translation.tr("Up • %1").arg(DateTime.uptime)
-                    textFormat: Text.MarkdownText
+                    implicitWidth: upRowContent.implicitWidth
+                    implicitHeight: upRowContent.implicitHeight
+
+                    Row {
+                        id: upRowContent
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Item {
+                            id: syncIconWrapper
+                            width: 18
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: opacity > 0
+                            opacity: (root.isSyncing || upMouseArea.containsMouse) ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation { duration: 200 }
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                iconSize: 18
+                                text: "sync"
+                                color: Appearance.colors.colPrimary
+                            }
+
+                            RotationAnimation {
+                                id: syncRotateAnim
+                                target: syncIconWrapper
+                                from: 0
+                                to: 360
+                                duration: 1000
+                                loops: root.isSyncing ? Animation.Infinite : 1
+                                running: root.isSyncing
+                            }
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.pixelSize: Appearance.font.pixelSize.normal
+                            color: upMouseArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer0
+                            text: Translation.tr("Up • %1").arg(DateTime.uptime)
+                            textFormat: Text.MarkdownText
+
+                            Behavior on color {
+                                ColorAnimation { duration: 150 }
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: upMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.triggerGoogleSync()
+                    }
+
+                    StyledToolTip {
+                        extraVisibleCondition: upMouseArea.containsMouse
+                        text: Translation.tr("Sincronizar con Google (Tareas y Calendario)")
+                    }
                 }
             }
         }
@@ -562,7 +708,7 @@ Item {
                 buttonIcon: "settings"
                 onClicked: {
                     GlobalStates.sidebarRightOpen = false;
-                    GlobalStates.settingsOpen = !GlobalStates.settingsOpen
+                    GlobalStates.settingsOpen = !GlobalStates.settingsOpen;
                 }
                 StyledToolTip {
                     text: Translation.tr("Settings")
@@ -570,8 +716,10 @@ Item {
             }
             QuickToggleButton {
                 toggled: false
-                buttonIcon: "mode_off_on"
-                onClicked: GlobalStates.sessionOpen = true
+                buttonIcon: "power_settings_new"
+                onClicked: {
+                    GlobalStates.sessionOpen = true;
+                }
                 StyledToolTip {
                     text: Translation.tr("Session")
                 }

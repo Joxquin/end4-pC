@@ -14,7 +14,7 @@ ContentPage {
     id: page
     property bool isMinimal: Config.options.settings.style === "minimal"
     forceWidth: true
-    baseWidth: !isMinimal ? 700 : 600
+    baseWidth: !isMinimal ? 720 : 600
     bottomContentPadding: 35
 
     function goTo(term) {
@@ -74,14 +74,13 @@ ContentPage {
         id: mainLayout
         Layout.fillWidth: true
         Layout.fillHeight: true
-        spacing: 6
+        spacing: 16
 
         ContentSection {
             icon: "screenshot_monitor"
             title: Translation.tr("Wallpaper & Colors")
             shape: MaterialShape.Shape.Puffy
             Layout.fillWidth: true
-            collapsible: false
 
             RowLayout {
                 Layout.fillWidth: true
@@ -152,7 +151,7 @@ ContentPage {
                                 { value: "scheme-expressive",  displayName: Translation.tr("Expressive"),  icon: "palette" },
                                 { value: "scheme-fidelity",    displayName: Translation.tr("Fidelity"),    icon: "equal" },
                                 { value: "scheme-fruit-salad", displayName: Translation.tr("Fruit Salad"), icon: "nutrition" },
-                                { value: "scheme-monochrome",  displayName: Translation.tr("Mono"),  icon: "invert_colors" },
+                                { value: "scheme-monochrome",  displayName: Translation.tr("Monochrome"),  icon: "invert_colors" },
                                 { value: "scheme-neutral",     displayName: Translation.tr("Neutral"),     icon: "tonality" },
                                 { value: "scheme-rainbow",     displayName: Translation.tr("Rainbow"),     icon: "gradient" },
                                 { value: "scheme-tonal-spot",  displayName: Translation.tr("Tonal Spot"),  icon: "lens" },
@@ -212,19 +211,36 @@ ContentPage {
                 title: Translation.tr("Transparency")     
                 GroupedList {
                     visible: isMinimal
-                    ConfigSwitch {
-                        buttonIcon: "check"
-                        text: Translation.tr("Enable")
-                        checked: Config.options.appearance.transparency.enable
-                        onCheckedChanged: { Config.options.appearance.transparency.enable = checked; }
+                        ConfigSwitch {
+                            buttonIcon: "check"
+                            text: Translation.tr("Enable")
+                            checked: Config.options.appearance.transparency.enable
+                            onCheckedChanged: { Config.options.appearance.transparency.enable = checked; }
+                        }
+                        ConfigSwitch {
+                            buttonIcon: "autofps_select"
+                            enabled: Config.options.appearance.transparency.enable
+                            text: Translation.tr("Automatic")
+                            checked: Config.options.appearance.transparency.automatic
+                            onCheckedChanged: { Config.options.appearance.transparency.automatic = checked; }
+                        }
                     }
-                    ConfigSwitch {
-                        buttonIcon: "autofps_select"
-                        enabled: Config.options.appearance.transparency.enable
-                        text: Translation.tr("Automatic")
-                        checked: Config.options.appearance.transparency.automatic
-                        onCheckedChanged: { Config.options.appearance.transparency.automatic = checked; }
-                    }
+            }
+
+            ConfigRow {
+                visible: !isMinimal
+                ConfigSwitch {
+                    buttonIcon: "motion_mode"
+                    text: Translation.tr("Transparency")
+                    checked: Config.options.appearance.transparency.enable
+                    onCheckedChanged: { Config.options.appearance.transparency.enable = checked; }
+                }
+                ConfigSwitch {
+                    buttonIcon: "autofps_select"
+                    enabled: Config.options.appearance.transparency.enable
+                    text: Translation.tr("Automatic")
+                    checked: Config.options.appearance.transparency.automatic
+                    onCheckedChanged: { Config.options.appearance.transparency.automatic = checked; }
                 }
             }
         }
@@ -262,20 +278,19 @@ ContentPage {
                         { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
                         { displayName: Translation.tr("Float"), icon: "view_day",   value: 1 },
                         { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
-                        { displayName: Translation.tr("M3"), icon: "interests",  value: 3 },
-                        { displayName: Translation.tr("Panel"), icon: "toolbar",  value: 4 }
+                        { displayName: Translation.tr("M3"), icon: "interests",  value: 3 }
                     ]
                 }
                 ConfigSelectionArray {
-                    text: Translation.tr("Group style")
+                    Layout.fillWidth: true
                     icon: "tab_group"
+                    text: Translation.tr("Group style")
                     currentValue: Config.options.bar.borderless
                     onSelected: newValue => { Config.options.bar.borderless = newValue; }
                     options: [
-                        { displayName: Translation.tr(""),          icon: "block",          value: "transparent" },
-                        { displayName: Translation.tr("Pills"),     icon: "pill",           value: "pills" },
-                        { displayName: Translation.tr("Separated"), icon: "view_column_2",  value: "separated" },
-                        { displayName: Translation.tr("Segmented"), icon: "tablet",           value: "segmented" },
+                        { displayName: Translation.tr("No"),          icon: "close",         value: "transparent" },
+                        { displayName: Translation.tr("Pills"),     icon: "pill",          value: "pills" },
+                        { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" }
                     ]
                 }
                 ConfigSelectionArray {
@@ -298,62 +313,257 @@ ContentPage {
             title: Translation.tr("Bar & Screen")
             shape: MaterialShape.Shape.ClamShell
             Layout.fillWidth: true
-            collapsible: false
             visible: !isMinimal
-            GroupedList {
-                ConfigSelectionArray {
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 2
+                rowSpacing: 8
+                columnSpacing: 8
+
+                Rectangle {
                     Layout.fillWidth: true
-                    icon: "position_bottom_right"
-                    text: Translation.tr("Bar position")
-                    currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
-                    onSelected: newValue => {
-                        Config.options.bar.bottom = (newValue & 1) !== 0;
-                        Config.options.bar.vertical = (newValue & 2) !== 0;
+                    Layout.preferredHeight: barPosCol.implicitHeight + 24
+                    radius: Appearance.rounding.normal
+                    color: Appearance.colors.colLayer1
+                    border.width: 1
+                    border.color: "transparent"
+
+                    ColumnLayout {
+                        id: barPosCol
+                        anchors { fill: parent; margins: 12 }
+                        spacing: 8
+
+                        RowLayout {
+                            spacing: 6
+                            MaterialSymbol {
+                                text: "swap_vert"
+                                iconSize: Appearance.font.pixelSize.normal + 4
+                                color: Appearance.colors.colOnLayer1
+                            }
+                            StyledText {
+                                text: Translation.tr("Bar position")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnLayer1
+                                font.weight: Font.Medium
+                            }
+                        }
+
+                        ConfigSelectionArray {
+                            id: barPosArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: (Config.options.bar.bottom ? 1 : 0) | (Config.options.bar.vertical ? 2 : 0)
+                            onSelected: newValue => {
+                                Config.options.bar.bottom = (newValue & 1) !== 0;
+                                Config.options.bar.vertical = (newValue & 2) !== 0;
+                            }
+                            options: [
+                                { displayName: Translation.tr("Top"), icon: "arrow_upward",   value: 0 },
+                                { displayName: Translation.tr("Left"), icon: "arrow_back",     value: 2 },
+                                { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
+                                { displayName: Translation.tr("Right"), icon: "arrow_forward",  value: 3 }
+                            ]
+                        }
                     }
-                    options: [
-                        { displayName: Translation.tr("Top"), icon: "arrow_upward",   value: 0 },
-                        { displayName: Translation.tr("Left"), icon: "arrow_back",     value: 2 },
-                        { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: 1 },
-                        { displayName: Translation.tr("Right"), icon: "arrow_forward",  value: 3 }
-                    ]
                 }
-                ConfigSelectionArray {
+
+                Rectangle {
                     Layout.fillWidth: true
-                    icon: "settop_component"
-                    text: Translation.tr("Bar style")
-                    currentValue: Config.options.bar.cornerStyle
-                    onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
-                    options: [
-                        { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
-                        { displayName: Translation.tr("Float"), icon: "view_day",   value: 1 },
-                        { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
-                        { displayName: Translation.tr("M3"), icon: "interests",  value: 3 },
-                        { displayName: Translation.tr("Panel"), icon: "toolbar",  value: 4 }
-                    ]
+                    Layout.preferredHeight: barStyleCol.implicitHeight + 24
+                    radius: Appearance.rounding.normal
+                    color: Appearance.colors.colLayer1
+                    border.width: 1
+                    border.color: "transparent"
+
+                    ColumnLayout {
+                        id: barStyleCol
+                        anchors { fill: parent; margins: 12 }
+                        spacing: 8
+
+                        RowLayout {
+                            spacing: 6
+                            MaterialSymbol {
+                                text: "settop_component"
+                                iconSize: Appearance.font.pixelSize.normal + 4
+                                color: Appearance.colors.colOnLayer1
+                            }
+                            StyledText {
+                                text: Translation.tr("Bar style")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnLayer1
+                                font.weight: Font.Medium
+                            }
+                        }
+
+                        ConfigSelectionArray {
+                            id: barStyleArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.bar.cornerStyle
+                            onSelected: newValue => { Config.options.bar.cornerStyle = newValue; }
+                            options: [
+                                { displayName: Translation.tr("Hug"), icon: "line_curve", value: 0 },
+                                { displayName: Translation.tr("Float"), icon: "view_day",   value: 1 },
+                                { displayName: Translation.tr("Islands"), icon: "crop_3_2",   value: 2 },
+                                { displayName: Translation.tr("M3"), icon: "interests",  value: 3 }
+                            ]
+                        }
+                    }
                 }
-                ConfigSelectionArray {
-                    text: Translation.tr("Group style")
-                    icon: "tab_group"
-                    currentValue: Config.options.bar.borderless
-                    onSelected: newValue => { Config.options.bar.borderless = newValue; }
-                    options: [
-                        { displayName: Translation.tr(""),          icon: "block",          value: "transparent" },
-                        { displayName: Translation.tr("Pills"),     icon: "pill",           value: "pills" },
-                        { displayName: Translation.tr("Separated"), icon: "view_column_2",  value: "separated" },
-                        { displayName: Translation.tr("Segmented"), icon: "tablet",           value: "segmented" },
-                    ]
-                }
-                ConfigSelectionArray {
+
+                Rectangle {
                     Layout.fillWidth: true
-                    icon: "rounded_corner"
-                    text: Translation.tr("Screen round corner")
-                    currentValue: Config.options.appearance.fakeScreenRounding
-                    onSelected: newValue => { Config.options.appearance.fakeScreenRounding = newValue; }
-                    options: [
-                        { displayName: Translation.tr("No"),                  icon: "close",           value: 0 },
-                        { displayName: Translation.tr("Yes"),                 icon: "check",           value: 1 },
-                        { displayName: Translation.tr("When not fullscreen"), icon: "fullscreen_exit", value: 2 }
-                    ]
+                    Layout.preferredHeight: screenRoundCol.implicitHeight + 24
+                    radius: Appearance.rounding.normal
+                    color: Appearance.colors.colLayer1
+                    ColumnLayout {
+                        id: groupStyleCol
+                        anchors { fill: parent; margins: 12 }
+                        spacing: 8
+
+                        RowLayout {
+                            spacing: 6
+                            MaterialSymbol {
+                                text: "tab_group"
+                                iconSize: Appearance.font.pixelSize.normal + 4
+                                color: Appearance.colors.colOnLayer1
+                            }
+                            StyledText {
+                                text: Translation.tr("Group style")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnLayer1
+                                font.weight: Font.Medium
+                            }
+                        }
+
+                        ConfigSelectionArray {
+                            id: groupStyleArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.bar.borderless
+                            onSelected: newValue => { Config.options.bar.borderless = newValue; }
+                            options: [
+                                { displayName: Translation.tr("No"),          icon: "close",         value: "transparent" },
+                                { displayName: Translation.tr("Pills"),     icon: "pill",          value: "pills" },
+                                { displayName: Translation.tr("Separated"), icon: "view_column_2", value: "separated" }
+                            ]
+                        }
+                    }
+                    
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: groupStyleCol.implicitHeight + 24
+                    radius: Appearance.rounding.normal
+                    color: Appearance.colors.colLayer1
+
+                    ColumnLayout {
+                        id: screenRoundCol
+                        anchors { fill: parent; margins: 12 }
+                        spacing: 8
+
+                        RowLayout {
+                            spacing: 6
+                            MaterialSymbol {
+                                text: "rounded_corner"
+                                iconSize: Appearance.font.pixelSize.normal + 4
+                                color: Appearance.colors.colOnLayer1
+                            }
+                            StyledText {
+                                text: Translation.tr("Screen round corner")
+                                font.pixelSize: Appearance.font.pixelSize.normal
+                                color: Appearance.colors.colOnLayer1
+                                font.weight: Font.Medium
+                            }
+                        }
+
+                        ConfigSelectionArray {
+                            id: screenRoundArray
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignRight
+                            currentValue: Config.options.appearance.fakeScreenRounding
+                            onSelected: newValue => { Config.options.appearance.fakeScreenRounding = newValue; }
+                            options: [
+                                { displayName: Translation.tr("No"),                  icon: "close",           value: 0 },
+                                { displayName: Translation.tr("Yes"),                 icon: "check",           value: 1 },
+                                { displayName: Translation.tr("When not fullscreen"), icon: "fullscreen_exit", value: 2 }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+
+        // Google Sync (Tasks & Calendar)
+        ContentSection {
+            id: googleSyncSection
+            icon: "cloud_sync"
+            title: Translation.tr("Google Sync (Tasks & Calendar)")
+
+            function saveGauth() {
+                const id = clientIdInput.text.trim();
+                const secret = clientSecretInput.text.trim();
+                const cmd = `mkdir -p ~/.config/illogical-impulse && cat << 'EOF' > ~/.config/illogical-impulse/gauth.json\n{\n  "client_id": "${id}",\n  "client_secret": "${secret}",\n  "access_token": "",\n  "refresh_token": ""\n}\nEOF`;
+                Quickshell.execDetached(["bash", "-c", cmd]);
+            }
+
+            FileView {
+                id: gauthFileView
+                path: `${Directories.config}/illogical-impulse/gauth.json`
+                onLoaded: {
+                    try {
+                        const data = JSON.parse(gauthFileView.text());
+                        clientIdInput.text = data.client_id ?? "";
+                        clientSecretInput.text = data.client_secret ?? "";
+                    } catch (e) {}
+                }
+            }
+
+            ConfigRow {
+                ContentSubsection {
+                    title: Translation.tr("Google Client ID")
+                    Layout.fillWidth: true
+
+                    ToolbarTextField {
+                        id: clientIdInput
+                        Layout.fillWidth: true
+                        placeholderText: "347070894088-...apps.googleusercontent.com"
+                        onEditingFinished: googleSyncSection.saveGauth()
+                    }
+                }
+            }
+
+            ConfigRow {
+                ContentSubsection {
+                    title: Translation.tr("Google Client Secret")
+                    Layout.fillWidth: true
+
+                    ToolbarTextField {
+                        id: clientSecretInput
+                        Layout.fillWidth: true
+                        echoMode: TextInput.Password
+                        placeholderText: "GOCSPX-..."
+                        onEditingFinished: googleSyncSection.saveGauth()
+                    }
+                }
+            }
+
+            ConfigRow {
+                ContentSubsection {
+                    title: Translation.tr("Google Account")
+                    Layout.fillWidth: true
+
+                    RippleButtonWithIcon {
+                        Layout.fillWidth: false
+                        materialIcon: "account_circle"
+                        mainText: Translation.tr("Conectar cuenta de Google")
+                        onClicked: {
+                            googleSyncSection.saveGauth();
+                            Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/google_sync.py"), "login"]);
+                        }
+                    }
                 }
             }
         }
