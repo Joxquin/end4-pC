@@ -17,7 +17,6 @@ Singleton {
     property bool osdBrightnessOpen: false
     property bool settingsOpen: false
     property bool osdVolumeOpen: false
-    property bool equalizerOpen: false
     property bool oskOpen: false
     property bool overlayOpen: false
     property bool overviewOpen: false
@@ -42,6 +41,7 @@ Singleton {
     property real desktopMenuX: 0
     property real desktopMenuY: 0
     property string wallpaperSelectorTarget: "wallpaper"
+    property var activeBarPopup: null
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
@@ -65,10 +65,43 @@ Singleton {
         root[name] = !root[name];
     }
     
+    Timer {
+        id: gcTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            if (typeof gc === "function") {
+                gc();
+            }
+        }
+    }
+
+    function scheduleGc() {
+        gcTimer.restart();
+    }
+
+    onSettingsOpenChanged: {
+        if (!settingsOpen) scheduleGc();
+    }
+
+    onSidebarLeftOpenChanged: {
+        if (!sidebarLeftOpen) scheduleGc();
+    }
+
+    onWallpaperSelectorOpenChanged: {
+        if (!wallpaperSelectorOpen) scheduleGc();
+    }
+
+    onOverviewOpenChanged: {
+        if (!overviewOpen) scheduleGc();
+    }
+
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {
             Notifications.timeoutAll();
             Notifications.markAllRead();
+        } else {
+            scheduleGc();
         }
     }
 
