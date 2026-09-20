@@ -9,20 +9,20 @@ pragma ComponentBehavior: Bound
 
 Singleton {
     id: root
-    signal requestBluetoothDialog()
     property bool barOpen: true
     property bool crosshairOpen: false
-    property bool equalizerOpen: false
     property bool sidebarLeftOpen: false
     property bool sidebarRightOpen: false
     property bool mediaControlsOpen: false
     property bool osdBrightnessOpen: false
     property bool settingsOpen: false
     property bool osdVolumeOpen: false
+    property bool equalizerOpen: false
     property bool oskOpen: false
     property bool overlayOpen: false
     property bool overviewOpen: false
     property bool regionSelectorOpen: false
+    property bool snipCopyInFlight: false
     property bool searchOpen: false
     property bool screenLocked: false
     property bool screenLockContainsCharacters: false
@@ -45,29 +45,6 @@ Singleton {
     property bool dropShelfOpen: false
     property real dropShelfX: 0
     property real dropShelfY: 0
-    property string osdIndicatorType: "volume"
-    property bool barCenterOnly: false
-    property bool diSessionOpen: false
-
-    readonly property bool dynamicIslandEnabled: Config.options.bar.layouts.leftLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.middleLayout.includes("dynamicIsland")
-        || Config.options.bar.layouts.rightLayout.includes("dynamicIsland")
-
-    signal centeredWallpaperThumpRequested()
-
-    // Shared by desktop (Background) and lock screen (LockSurface) scroll-to-cycle
-    readonly property var centeredShapeOptions: [
-        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill",
-        "Triangle", "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny",
-        "Cookie4Sided", "Cookie6Sided", "Cookie7Sided", "Cookie9Sided", "Cookie12Sided",
-        "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", "SoftBurst", "Flower",
-        "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart"
-    ]
-    function cycleCenteredWallpaperShape(direction) {
-        const opts = root.centeredShapeOptions
-        const i = opts.indexOf(Config.options.background.centeredWallpaperShape)
-        Config.options.background.centeredWallpaperShape = opts[(i + direction + opts.length) % opts.length]
-    }
 
     readonly property var hotCornerOptions: [
         { displayName: Translation.tr("None"),                  value: "none" },
@@ -80,8 +57,7 @@ Singleton {
         { displayName: Translation.tr("ScreenShot Region"),        value: "regionSelectorOpen" },
         { displayName: Translation.tr("Screen Translator"),      value: "screenTranslatorOpen" },
         { displayName: Translation.tr("On-screen Keyboard"),     value: "oskOpen" },
-        { displayName: Translation.tr("Session Menu"),           value: "sessionOpen" },
-        { displayName: Translation.tr("Equalizer"),           value: "equalizerOpen" }
+        { displayName: Translation.tr("Session Menu"),           value: "sessionOpen" }
     ]
 
     function toggleState(name) {

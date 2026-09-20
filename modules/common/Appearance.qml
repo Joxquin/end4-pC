@@ -11,6 +11,8 @@ Singleton {
     property QtObject animationCurves
     property QtObject colors
     property QtObject rounding
+    property QtObject spacing
+    property QtObject borderWidth
     property QtObject font
     property QtObject sizes
     property string syntaxHighlightingTheme
@@ -225,6 +227,31 @@ Singleton {
         property int full: 9999
         property int screenRounding: large
         property int windowRounding: 18
+
+        property int button: small
+        property int card: normal
+        property int extraLarge: verylarge
+    }
+
+    spacing: QtObject {
+        property int space0: 0
+        property int space25: 2
+        property int space50: 4
+        property int space75: 6
+        property int space100: 8
+        property int space125: 10
+        property int space150: 12
+        property int space175: 14
+        property int space200: 16
+        property int space250: 20
+        property int space300: 24
+        property int space400: 32
+    }
+
+    borderWidth: QtObject {
+        property int standard: 1
+        property int emphasis: 2
+        property int heavy: 4
     }
 
     font: QtObject {
@@ -435,7 +462,7 @@ Singleton {
     sizes: QtObject {
         property real baseBarHeight: 40
         property real barHeight: Config.options.bar.cornerStyle === 1 ? 
-            (baseBarHeight + root.sizes.hyprlandGapsOut * 2) : Config.options.bar.cornerStyle === 4 ? baseBarHeight + 4 : baseBarHeight
+            (baseBarHeight + root.sizes.hyprlandGapsOut * 2) : baseBarHeight
         property real barCenterSideModuleWidth: Config.options?.bar.verbose ? 360 : 140
         property real barCenterSideModuleWidthShortened: 280
         property real barCenterSideModuleWidthHellaShortened: 190
