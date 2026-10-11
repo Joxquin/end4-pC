@@ -27,6 +27,7 @@ Scope {
             visible: Config.options.background.widgets.visualizer.enable
                 && Config.options.background.widgets.visualizer.style === "halo"
                 && Config.options.background.widgets.visualizer.haloOnTop
+                && !(Config.options.background.widgets.visualizer.haloHideOnFullscreen && haloOverlayWindow.effectiveFullscreen)
                 && (Config.options.background.screenList.length === 0
                     || Config.options.background.screenList.includes(modelData.name))
             WlrLayershell.namespace: "quickshell:halo-overlay"

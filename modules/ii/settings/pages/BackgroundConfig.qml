@@ -1211,6 +1211,16 @@ ContentPage {
                         settingsVisualizer.entry.haloEdgeToEdge = checked;
                     }
                 }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "fullscreen_exit"
+                    text: Translation.tr("Hide when fullscreen")
+                    enabled: settingsVisualizer.entry.style === "halo" && settingsVisualizer.entry.haloOnTop
+                    checked: settingsVisualizer.entry.haloHideOnFullscreen ?? false
+                    onCheckedChanged: {
+                        settingsVisualizer.entry.haloHideOnFullscreen = checked;
+                    }
+                }
             }
         }
 

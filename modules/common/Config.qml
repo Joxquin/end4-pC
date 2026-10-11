@@ -392,6 +392,7 @@ Singleton {
                         property real opacity: 1.0
                         property bool haloOnTop: false
                         property bool haloEdgeToEdge: false
+                        property bool haloHideOnFullscreen: false
                     }
 
                     property JsonObject customImage: JsonObject {
