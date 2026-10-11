@@ -133,6 +133,7 @@ QtObject {
         "desktop:Visualizer sensitivity": { type: "slider", get: () => Config.options.background.widgets.visualizer.sensitivity * 100, set: v => { Config.options.background.widgets.visualizer.sensitivity = Math.round(v) / 100; }, from: 50, to: 300, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Visualizer height": { type: "slider", get: () => Config.options.background.widgets.visualizer.height, set: v => { Config.options.background.widgets.visualizer.height = Math.round(v); }, from: 120, to: 600, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Visualizer size": { type: "slider", get: () => Config.options.background.widgets.visualizer.ringSize, set: v => { Config.options.background.widgets.visualizer.ringSize = Math.round(v); }, from: 200, to: 900, stopIndicatorValues: [], usePercentTooltip: false },
+        "desktop:Visualizer transparency": { type: "slider", get: () => Math.round((1 - (Config.options.background.widgets.visualizer.opacity ?? 1.0)) * 100), set: v => { Config.options.background.widgets.visualizer.opacity = Math.round((1 - v / 100) * 100) / 100; }, from: 0, to: 100, stopIndicatorValues: [0], usePercentTooltip: true },
         "desktop:Visualizer on top": { type: "switch", get: () => Config.options.background.widgets.visualizer.haloOnTop, set: v => { Config.options.background.widgets.visualizer.haloOnTop = v; } },
         "desktop:Visualizer edge to edge": { type: "switch", get: () => Config.options.background.widgets.visualizer.haloEdgeToEdge, set: v => { Config.options.background.widgets.visualizer.haloEdgeToEdge = v; } },
         "desktop:Text enable": { type: "switch", get: () => Config.options.background.widgets.customText.enable, set: v => { Config.options.background.widgets.customText.enable = v; } },
@@ -499,6 +500,7 @@ QtObject {
                 { type: "slider", key: "desktop:Visualizer sensitivity", title: Translation.tr("Sensitivity (%)"), icon: "speed", percent: false },
                 { type: "slider", key: "desktop:Visualizer height", title: Translation.tr("Height"), icon: "height", percent: false },
                 { type: "slider", key: "desktop:Visualizer size", title: Translation.tr("Ring size"), icon: "radio_button_unchecked", percent: false },
+                { type: "slider", key: "desktop:Visualizer transparency", title: Translation.tr("Transparency"), icon: "opacity" },
                 { type: "toggle", key: "desktop:Visualizer on top", title: Translation.tr("Show on top"), icon: "vertical_align_top" },
                 { type: "toggle", key: "desktop:Visualizer edge to edge", title: Translation.tr("Edge to edge"), icon: "fullscreen" }
             ]

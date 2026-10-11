@@ -1179,6 +1179,18 @@ ContentPage {
                         settingsVisualizer.entry.ringSize = Math.round(value);
                     }
                 }
+                ConfigSlider {
+                    text: Translation.tr("Transparency")
+                    buttonIcon: "opacity"
+                    usePercentTooltip: true
+                    value: (1 - (settingsVisualizer.entry.opacity ?? 1.0)) * 100
+                    from: 0
+                    to: 100
+                    stopIndicatorValues: [0]
+                    onValueChanged: {
+                        settingsVisualizer.entry.opacity = Math.round((1 - value / 100) * 100) / 100;
+                    }
+                }
                 ConfigSwitch {
                     Layout.fillWidth: true
                     buttonIcon: "vertical_align_top"

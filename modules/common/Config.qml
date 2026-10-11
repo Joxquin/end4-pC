@@ -389,6 +389,7 @@ Singleton {
                         property real sensitivity: 1
                         property int height: 260 // mirror, aurora and dots
                         property int ringSize: 380
+                        property real opacity: 1.0
                         property bool haloOnTop: false
                         property bool haloEdgeToEdge: false
                     }
