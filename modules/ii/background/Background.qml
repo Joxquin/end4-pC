@@ -6,6 +6,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.common.functions as CF
+import qs.modules.ii.background.widgets.visualizer
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -14,15 +15,98 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
-Variants {
-    id: root
-    model: Quickshell.screens
+Scope {
+    id: backgroundScope
 
-    PanelWindow {
-        id: bgRoot
+    Variants {
+        model: Quickshell.screens
+        PanelWindow {
+            id: haloOverlayWindow
+            required property var modelData
+            screen: modelData
+            visible: Config.options.background.widgets.visualizer.enable
+                && Config.options.background.widgets.visualizer.style === "halo"
+                && Config.options.background.widgets.visualizer.haloOnTop
+                && (Config.options.background.screenList.length === 0
+                    || Config.options.background.screenList.includes(modelData.name))
+            WlrLayershell.namespace: "quickshell:halo-overlay"
+            WlrLayershell.layer: WlrLayer.Overlay
+            exclusiveZone: 0
+            color: "transparent"
+            mask: Region {}
+            anchors {
+                top: true
+                bottom: true
+                left: true
+                right: true
+            }
 
-        required property var modelData
-        property string currentWallpaperSource: Config.options.background.wallpaperPath
+            VisualizerWidget {
+                anchors.fill: parent
+                screenWidth: haloOverlayWindow.screen.width
+                screenHeight: haloOverlayWindow.screen.height
+                scaledScreenWidth: haloOverlayWindow.screen.width
+                scaledScreenHeight: haloOverlayWindow.screen.height
+                wallpaperScale: 1
+                pinnedBottom: true
+            }
+
+            // Screen corner rounding overlay so halo widget stays beneath the fake screen corners
+            property HyprlandMonitor monitor: Hyprland.monitorFor(haloOverlayWindow.screen)
+            property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
+            property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
+            property bool fullscreen: activeWorkspaceWithFullscreen != undefined
+            property var thisMonitorData: HyprlandData.monitors.find(m => m.name === monitor.name)
+            property bool specialOpen: (thisMonitorData?.specialWorkspace?.name ?? "") !== ""
+            property bool effectiveFullscreen: fullscreen && !specialOpen
+
+            readonly property bool showFakeRounding: Config.options.bar.cornerStyle !== 5
+                && (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !effectiveFullscreen))
+
+            RoundCorner {
+                corner: RoundCorner.CornerEnum.TopLeft
+                implicitSize: Appearance.rounding.screenRounding
+                color: "#000000"
+                visible: haloOverlayWindow.showFakeRounding
+                anchors.top: parent.top
+                anchors.left: parent.left
+            }
+            RoundCorner {
+                corner: RoundCorner.CornerEnum.TopRight
+                implicitSize: Appearance.rounding.screenRounding
+                color: "#000000"
+                visible: haloOverlayWindow.showFakeRounding
+                anchors.top: parent.top
+                anchors.right: parent.right
+            }
+            RoundCorner {
+                corner: RoundCorner.CornerEnum.BottomLeft
+                implicitSize: Appearance.rounding.screenRounding
+                color: "#000000"
+                visible: haloOverlayWindow.showFakeRounding
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+            }
+            RoundCorner {
+                corner: RoundCorner.CornerEnum.BottomRight
+                implicitSize: Appearance.rounding.screenRounding
+                color: "#000000"
+                visible: haloOverlayWindow.showFakeRounding
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+            }
+        }
+    }
+
+    Variants {
+        id: root
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: bgRoot
+
+            required property var modelData
+            property string currentWallpaperSource: Config.options.background.wallpaperPath
         property string previousWallpaperSource: Config.options.background.wallpaperPath
         property bool videoRevealed: false
 
@@ -446,4 +530,5 @@ Variants {
             }
         }
     }
+}
 }

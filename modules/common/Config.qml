@@ -389,6 +389,7 @@ Singleton {
                         property real sensitivity: 1
                         property int height: 260 // mirror, aurora and dots
                         property int ringSize: 380
+                        property bool haloOnTop: false
                     }
 
                     property JsonObject customImage: JsonObject {

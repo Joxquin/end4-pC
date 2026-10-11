@@ -1179,6 +1179,16 @@ ContentPage {
                         settingsVisualizer.entry.ringSize = Math.round(value);
                     }
                 }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "vertical_align_top"
+                    text: Translation.tr("Show on top")
+                    enabled: settingsVisualizer.entry.style === "halo"
+                    checked: settingsVisualizer.entry.haloOnTop ?? false
+                    onCheckedChanged: {
+                        settingsVisualizer.entry.haloOnTop = checked;
+                    }
+                }
             }
         }
 

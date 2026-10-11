@@ -59,6 +59,9 @@ Item {
 
             shown: Config.options.background.widgets[loaderDelegate.modelData.key].enable
                 && loaderDelegate.enableLoading
+                && !(loaderDelegate.modelData.key === "visualizer"
+                    && Config.options.background.widgets.visualizer.style === "halo"
+                    && Config.options.background.widgets.visualizer.haloOnTop)
                 && (loaderDelegate.modelData.alwaysOnLock
                     ? (GlobalStates.screenLocked || root.onThisScreen)
                     : root.onThisScreen)
