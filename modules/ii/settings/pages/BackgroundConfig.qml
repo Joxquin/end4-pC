@@ -1189,6 +1189,16 @@ ContentPage {
                         settingsVisualizer.entry.haloOnTop = checked;
                     }
                 }
+                ConfigSwitch {
+                    Layout.fillWidth: true
+                    buttonIcon: "fullscreen"
+                    text: Translation.tr("Edge to edge")
+                    enabled: settingsVisualizer.entry.style === "halo" && settingsVisualizer.entry.haloOnTop
+                    checked: settingsVisualizer.entry.haloEdgeToEdge ?? false
+                    onCheckedChanged: {
+                        settingsVisualizer.entry.haloEdgeToEdge = checked;
+                    }
+                }
             }
         }
 

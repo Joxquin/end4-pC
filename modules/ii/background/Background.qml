@@ -32,6 +32,9 @@ Scope {
             WlrLayershell.namespace: "quickshell:halo-overlay"
             WlrLayershell.layer: WlrLayer.Overlay
             exclusiveZone: 0
+            exclusionMode: Config.options.background.widgets.visualizer.haloEdgeToEdge
+                ? ExclusionMode.Ignore
+                : ExclusionMode.Normal
             color: "transparent"
             mask: Region {}
             anchors {

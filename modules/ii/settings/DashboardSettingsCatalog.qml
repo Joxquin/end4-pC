@@ -134,6 +134,7 @@ QtObject {
         "desktop:Visualizer height": { type: "slider", get: () => Config.options.background.widgets.visualizer.height, set: v => { Config.options.background.widgets.visualizer.height = Math.round(v); }, from: 120, to: 600, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Visualizer size": { type: "slider", get: () => Config.options.background.widgets.visualizer.ringSize, set: v => { Config.options.background.widgets.visualizer.ringSize = Math.round(v); }, from: 200, to: 900, stopIndicatorValues: [], usePercentTooltip: false },
         "desktop:Visualizer on top": { type: "switch", get: () => Config.options.background.widgets.visualizer.haloOnTop, set: v => { Config.options.background.widgets.visualizer.haloOnTop = v; } },
+        "desktop:Visualizer edge to edge": { type: "switch", get: () => Config.options.background.widgets.visualizer.haloEdgeToEdge, set: v => { Config.options.background.widgets.visualizer.haloEdgeToEdge = v; } },
         "desktop:Text enable": { type: "switch", get: () => Config.options.background.widgets.customText.enable, set: v => { Config.options.background.widgets.customText.enable = v; } },
         "desktop:Text shadow": { type: "switch", get: () => Config.options.background.widgets.customText.shadow, set: v => { Config.options.background.widgets.customText.shadow = v; } },
         "desktop:Text auto colors": { type: "switch", get: () => Config.options.background.widgets.customText.color === "", set: v => { Config.options.background.widgets.customText.color = v ? "" : "primary"; } },
@@ -498,7 +499,8 @@ QtObject {
                 { type: "slider", key: "desktop:Visualizer sensitivity", title: Translation.tr("Sensitivity (%)"), icon: "speed", percent: false },
                 { type: "slider", key: "desktop:Visualizer height", title: Translation.tr("Height"), icon: "height", percent: false },
                 { type: "slider", key: "desktop:Visualizer size", title: Translation.tr("Ring size"), icon: "radio_button_unchecked", percent: false },
-                { type: "toggle", key: "desktop:Visualizer on top", title: Translation.tr("Show on top"), icon: "vertical_align_top" }
+                { type: "toggle", key: "desktop:Visualizer on top", title: Translation.tr("Show on top"), icon: "vertical_align_top" },
+                { type: "toggle", key: "desktop:Visualizer edge to edge", title: Translation.tr("Edge to edge"), icon: "fullscreen" }
             ]
         },
         {
