@@ -9,6 +9,7 @@ settings_paths=(
     "${XDG_CONFIG_HOME:-$HOME/.config}/Code - Insiders/User/settings.json"
     "${XDG_CONFIG_HOME:-$HOME/.config}/Cursor/User/settings.json"
     "${XDG_CONFIG_HOME:-$HOME/.config}/Antigravity/User/settings.json"
+    "${XDG_CONFIG_HOME:-$HOME/.config}/Antigravity IDE/User/settings.json"
     
     # Add more paths as needed for other forks
 )
@@ -16,8 +17,19 @@ settings_paths=(
 new_color=$(cat "$COLOR_FILE_PATH")
 
 # Loop through each settings file path
+current_mode=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null | tr -d "'")
+if [[ "$current_mode" == "prefer-light" ]]; then
+    target_theme="Material Code Light"
+else
+    target_theme="Material Code"
+fi
+
 for CODE_SETTINGS_PATH in "${settings_paths[@]}"; do
     if [[ -f "$CODE_SETTINGS_PATH" ]]; then
+        if grep -q '"workbench.colorTheme"' "$CODE_SETTINGS_PATH"; then
+            sed -i -E "s/(\"workbench.colorTheme\"\s*:\s*\")[^\"]*(\")/\1${target_theme}\2/" "$CODE_SETTINGS_PATH"
+        fi
+
         # Try to update the key if it exists
         if grep -q '"material-code.primaryColor"' "$CODE_SETTINGS_PATH"; then
             sed -i -E \
